@@ -1,0 +1,31 @@
+---
+- name: AWS linux | Gathering real ip
+  shell: |
+    wget --inet4-only -qO - icanhazip.com || curl ifconfig.me
+  register: real_ip
+  changed_when: false
+
+- name: AWS linux | CentOS info
+  when:
+    - ansible_distribution == 'CentOS'
+  debug:
+    msg: "{{ ansible_distribution }} version {{ ansible_distribution_version }} has real IP {{ real_ip.stdout }} based on {{ ansible_virtualization_type }}"
+
+- name: AWS linux | Ubuntu info
+  when:
+    - ansible_distribution == 'Ubuntu'
+  debug:
+    msg: "{{ ansible_distribution }} version {{ ansible_distribution_version }} has real IP {{ real_ip.stdout }} based on {{ ansible_virtualization_type }}"
+
+- name: AWS linux | Amazon linux info
+  when: ansible_distribution == 'Amazon'
+  debug:
+    msg: "{{ ansible_distribution }} version {{ ansible_distribution_version }} has real IP {{ real_ip.stdout }} based on {{ ansible_virtualization_type }}"
+
+- name: AWS linux | Other linux info
+  when:
+    - ansible_distribution != 'Amazon'
+    - ansible_distribution != 'CentOS'
+    - ansible_distribution != 'Ubuntu'
+  debug:
+    msg: "{{ ansible_distribution }} version {{ ansible_distribution_version }} has real IP {{ real_ip.stdout | default(omit) }} based on {{ ansible_virtualization_type }}"

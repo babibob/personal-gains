@@ -1,0 +1,16 @@
+---
+- name: Iptables | Find iptables rules
+  shell: iptables -L INPUT -v -n --line-numbers | grep '{{ item }}'
+  args:
+    executable: /usr/bin/bash
+  register: rules_number
+  changed_when: rules_number.rc in [ 0 ]
+  failed_when: rules_number.rc not in [ 0, 1 ]
+  loop: "{{ checked_ip | split(',') }}"
+
+- name: Iptables | Register finding rules
+  debug:
+    msg: "{{ item.stdout_lines }}"
+  loop: "{{ rules_number.results }}"
+  loop_control:
+    label: "{{ item.item }}"

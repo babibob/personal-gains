@@ -1,0 +1,55 @@
+---
+- name: Hosts info
+  hosts: "{{ lookup('env', 'HOST') }}"
+  tasks:
+    ####
+    - name: Docker info
+      block:
+        - name: Docker info | Check is Docker exist
+          stat:
+            path: /bin/docker
+          register: check_docker
+        #SHOW HOST WITHOUT DOCKER
+        # - name: Docker info | Docker not exists
+        #   when: check_docker.stat.exists == false
+        #   debug:
+        #     msg: Docker is not installed
+        - name: Docker info | Docker version
+          when: check_docker.stat.exists
+          command: docker --version
+          register: docker_version
+          changed_when: false
+        - name: Docker info | Docker compose version
+          when: check_docker.stat.exists
+          command: docker compose version
+          register: docker_compose_version
+          changed_when: false
+
+        #SHOW DOCKER NETWORKS
+        # - name: Docker info | Docker networks check
+        #   when: check_docker.stat.exists
+        #   shell: |
+        #       {% raw %}
+        #       docker inspect --format 'Container name: {{ index .Name | printf "%-25.25s" }} Project path: {{index .Config.Labels "com.docker.compose.project.working_dir" | printf "%-25.25s"}} Project network: {{range $k, $v := .NetworkSettings.Networks}}{{printf "%s" $k}}{{end}}' $(docker ps -aq)
+        #       {% endraw %}
+        #   register: docker_networks
+        #   changed_when: false
+
+        - name: Docker info | Docker RestartPolicy
+          when: check_docker.stat.exists
+          shell: |
+              {% raw %}
+              docker inspect --format 'Container name: {{ index .Name | printf "%-25.25s" }} RestartPolicy: {{json .HostConfig.RestartPolicy.Name}}' $(docker ps -aq)
+              {% endraw %}
+          register: docker_restartpolicy
+          changed_when: false
+        - name: Docker info | Docker version and network
+          when:
+            - check_docker.stat.exists
+          debug:
+            msg:
+              - "{{ docker_version.stdout_lines }}"
+              - "{{ docker_compose_version.stdout_lines }}"
+              # - "{{ docker_networks.stdout_lines }}"
+              - "{{ docker_restartpolicy.stdout_lines }}"
+...

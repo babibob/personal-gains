@@ -1,0 +1,21 @@
+---
+- name: Hosts info
+  hosts: "{{ lookup('env', 'HOST') }}"
+  vars:
+    checked_ip: "{{ lookup('env', 'CHECKED_IP') }}"
+  roles:
+    - role: linux_aws
+      when:
+        - ansible_system == "Linux" or ansible_distribution == "MacOSX"
+        - ansible_default_ipv4.address | ansible.utils.ipaddr('private')
+    - role: linux_not_aws
+      when:
+        - ansible_system == "Linux" or ansible_distribution == "MacOSX"
+        - ansible_default_ipv4.address | ansible.utils.ipaddr('public')
+    - role: windows
+      when: ansible_system == "Win32NT"
+    - role: check_ip_in_rules
+      tags: check_ip_in_rules
+      when: (ansible_facts['distribution'] == "CentOS" and ansible_facts['distribution_major_version'] != "6") or
+              (ansible_facts['distribution'] == "Ubuntu")
+...

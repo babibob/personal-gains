@@ -1,0 +1,6 @@
+---
+- name: Hosts | Windows info
+  debug:
+    msg:
+      - "{{ ansible_distribution }} version {{ ansible_distribution_version }} has real IP {{ ansible_ip_addresses | ansible.utils.ipv4('address') | ipaddr('public') | first }} based on {{ ansible_virtualization_type }}"
+...

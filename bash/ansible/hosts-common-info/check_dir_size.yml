@@ -1,0 +1,41 @@
+---
+- name: Hosts info
+  hosts: "{{ lookup('env', 'HOST') }}"
+  tasks:
+    - name: Directory info
+      when: ansible_system == "Linux"
+      block:
+
+        - name: Directory info | Check is directory exist
+          stat:
+            path: "{{ lookup('env', 'DIR') }}"
+          register: logs_dir
+
+        # - name: Directory info | Check log directory size
+        #   when: logs_dir.stat.exists
+        #   shell: |
+        #     du -h --threshold=1G {{ lookup('env', 'DIR') }}
+        #   register: logs_dir_size
+        #   changed_when: false
+
+        # - name: Directory info | Show log directory size > 1 Gb
+        #   when: logs_dir.stat.exists and logs_dir_size.stdout | length > 0
+        #   debug:
+        #     msg:
+        #       - "{{ logs_dir_size.stdout }}"
+
+        - name: Directory info | Find files
+          find:
+            paths: "{{ lookup('env', 'DIR') }}"
+            file_type: file
+            recurse: true
+          register: found_files
+
+        - name: Directory info | Calculate total file size
+          set_fact:
+            total_size: "{{ found_files.files | map(attribute='size') | map('int') | sum  | human_readable(true) }}"
+
+        - name: Directory info | Display total file size
+          when: logs_dir.stat.exists and "Kb" not in total_size
+          debug:
+            var: total_size
