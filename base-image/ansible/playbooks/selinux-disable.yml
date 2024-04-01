@@ -1,0 +1,39 @@
+---
+- name: Disable SELinux | Start playbook basic setup
+  hosts: "{{ lookup('env', 'HOST') }}"
+  tasks:
+    - name: Disable SElinux
+      when: ansible_facts['distribution'] == "CentOS" or ansible_facts['distribution'] == "Amazon"
+      block:
+        - name: Disable SELinux | Install libselinux-python (dependency)
+          yum:
+            name: libselinux-python
+            state: present
+            update_cache: true
+
+        - name: Disable SELinux | Disable selinux & reboot host (if required)
+          command: sestatus
+          register: sestatus
+          changed_when: sestatus.stdout | regex_search(".*enabled.*")
+          notify:
+            - Handlers | Disabling selinux
+            - Handlers | Reboot host
+
+        - name: Disable SELinux | Print status
+          debug:
+            msg: "{{ sestatus.stdout }}"
+
+  handlers:
+    - name: Handlers | Disabling selinux
+      ansible.posix.selinux:
+        state: disabled
+
+    - name: Handlers | Reboot host
+      reboot:
+        msg: "Reboot host"
+        connect_timeout: '5'
+        reboot_timeout: '300'
+        pre_reboot_delay: '0'
+        post_reboot_delay: '30'
+        test_command: uptime
+...

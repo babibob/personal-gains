@@ -1,0 +1,25 @@
+---
+# .ansible-lint
+
+# var_naming_pattern: "^[a-z_][a-z0-9_]*$"
+
+profile: null # production, min, basic, moderate, safety, shared, production
+
+warn_list:  # or skip_list to silence them completely
+  - command-instead-of-module  # Using command rather than module
+  - command-instead-of-shell  # Use shell only when shell functionality is required
+  - experimental  # all rules tagged as experimental
+  - no-changed-when  # Commands should not change things if nothing needs doing
+  - risky-shell-pipe  # Shells that use pipes should set the pipefail option
+  - risky-file-permissions # File permissions unset or
+  - ignore-errors # This rule checks that playbooks do not use the ignore_errors directive
+  - name
+  - jinja
+#-x 303,301,306,305
+skip_list:
+  - truthy
+  - yaml[comments]
+  - yaml[line-length]
+  - var-naming
+  - fqcn
+  - package-latest

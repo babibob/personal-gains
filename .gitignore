@@ -1,0 +1,17 @@
+# VSCode
+.vscode*/*
+.history/
+# Windows image file caches
+Desktop.ini
+$RECYCLE.BIN
+# OSX
+.DS_Store
+# Vim swapfiles
+*.swp
+*.swo
+#secrets
+*.crt
+*.csr
+*.pem
+*.key
+*.db
