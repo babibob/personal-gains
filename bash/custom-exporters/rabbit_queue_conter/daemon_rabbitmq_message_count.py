@@ -4,7 +4,7 @@ from pika.exceptions import ChannelClosedByBroker, ChannelWrongStateError
 
 while(True):
     with open('/tmp/rabbit_queue_count-daemon.file.draft', 'w+') as draftfile:
-        params = pika.ConnectionParameters(host='10.117.0.4',port=5672,credentials=pika.credentials.PlainCredentials('<USER>', '<PASSWORD>'), )
+        params = pika.ConnectionParameters(host='rabbitmq.example.com',port=5672,credentials=pika.credentials.PlainCredentials('<USER>', '<PASSWORD>'), )
         connection = pika.BlockingConnection(parameters=params)
         channel = connection.channel()
 
