@@ -1,5 +1,5 @@
 [Unit]
-Description=Python daemon for count rabbitmq queue 
+Description=Python daemon for count rabbitmq queue
 After=syslog.target
 After=network.target
 
@@ -8,7 +8,7 @@ Type=simple
 User=root
 Group=root
 Restart=always
-ExecStart=/usr/bin/python3 /usr/local/bin/rabbit-message-count-daemon.py 
+ExecStart=/usr/bin/python3 /usr/local/bin/rabbit-message-count-daemon.py
 
 # Give the script some time to startup
 TimeoutSec=15
