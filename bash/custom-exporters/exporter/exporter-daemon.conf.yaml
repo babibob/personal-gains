@@ -1,0 +1,8 @@
+# locate - /usr/local/etc/
+trace:
+  <TARGET_HOST01>
+  <TARGET_HOST012>
+systemd:
+  systemd_services
+fileModify:
+  full_path_to_file

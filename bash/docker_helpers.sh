@@ -33,3 +33,9 @@ done
 for c in `docker ps -q`; do docker inspect  -f '{{ .Config.Labels.containers | printf "%-30.30s"}} {{range.NetworkSettings.Networks}}{{.IPAddress}}{{end}}' $c ; done
 #OR
 docker inspect -f '{{.Name}} - {{range .NetworkSettings.Networks}}:::{{.IPAddress}}{{end}}' $(docker ps -aq)
+
+# Build docker image in gitlab-ci
+export VERSION="8.0.29"
+export IMAGE_NAME="mysql"
+echo "FROM ${IMAGE_NAME}:${VERSION}" > Dockerfile.${IMAGE_NAME}
+docker build --no-cache --tag "${IMAGE_NAME}:${VERSION}" --file Dockerfile.${IMAGE_NAME} .

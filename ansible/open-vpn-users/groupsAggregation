@@ -1,0 +1,4 @@
+admin=k8s_prod, gitlab, k8s_sand,dns,internal_proxy
+dev=gitlab,k8s_sand,internal_proxy
+operator=internal_proxy
+default=dns

@@ -1,0 +1,29 @@
+---
+- name: Revoke OVPN user certificate
+  hosts: "{{ lookup('env', 'HOST') }}"
+  vars_prompt:
+  - name: user_name
+    prompt: Enter user name
+    private: no
+  tasks:
+  - name: subCA revoke cert
+    expect:
+      command: ./easyrsa revoke {{ user_name }}
+      responses:
+        'Continue with revocation:': 'yes'
+      chdir: "/root/subCA/"
+  - name: subCA update db
+    shell: ./easyrsa update-db
+    args:
+      chdir: /root/subCA/
+#    failed_when: rc != 127 or rc != 0
+  - name: Update subCA certificate revocation list (crl.pem)
+    shell: ./easyrsa gen-crl
+    args:
+      chdir: /root/subCA/
+  - name: Copy crl.pem to /etc/openvpn
+    copy:
+      remote_src: yes
+      src:  "/root/subCA/pki/crl.pem"
+      dest: "/etc/openvpn/keys/crl.pem"
+      force: yes

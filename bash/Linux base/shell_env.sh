@@ -1,3 +1,6 @@
+# What script do
+https://explainshell.com/
+
 # History full clean
 cat /dev/null> ~ /.bash_history && history -c && exit
 
@@ -17,3 +20,7 @@ alias randpw='< /dev/urandom tr -dc 'a-zA-Z0-9[^\p{L}\d\s@#]' | fold -w 12 | hea
 # Show ssh activity on host
 last -i
 journalctl -t sshd -b0 -r
+
+# Generate ssh keys with comment
+ssh-keygen -t ed25519 -C "user.name@g5e.com"
+

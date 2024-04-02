@@ -1,0 +1,47 @@
+rules_list:
+    - name: ALLOW-SSH
+      description: "SSH access"
+      ip: "{{ jump_server }}"
+      port: "22"
+
+    - name: ALLOW-HTTP(S)
+      description: "WEB access"
+      ip: "{{ all }},{{ all_ipv6 }}"
+      port: "80,443"
+
+    - name: ALLOW-RDP
+      description: "RDP access"
+      ip: "{{ jump_server }},{{ monitoring }}"
+      port: "3389"
+
+    - name: ALLOW-Monitoring
+      description: "Monitoring access"
+      ip: "{{ monitoring }}"
+      port: "443,9182"
+
+    - name: BLOCK-TCP
+      description: "Block All TCP"
+      ip: "any"
+      port: "1-21,23-79,81-442,444-3388,3390-9181,9183-65535"
+      action: "block"
+
+    - name: BLOCK-UDP
+      description: "Block All UDP"
+      ip: "any"
+      port: "any"
+      action: "block"
+      protocol: "udp"
+
+    - name: ALLOW-ICMPV4
+      description: "Allow ICMPv4"
+      ip: "{{ jump_server }},{{ monitoring }}"
+      port: "any"
+      protocol: "icmpv4"
+      icmptype: "8"
+
+    - name: ALLOW-ICMPV6
+      description: "Allow ICMPv6 from VPN"
+      ip: "any"
+      port: "any"
+      protocol: "icmpv6"
+      icmptype: "8"

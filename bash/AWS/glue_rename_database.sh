@@ -6,7 +6,7 @@ cd ${NEW_DB_NAME}
 aws glue get-tables --database-name ${CURRENT_DB_NAME} | \
 jq "del(.TableList[] | .DatabaseName, .CreateTime, .UpdateTime, .CreatedBy, .IsRegisteredWithLakeFormation, .CatalogId, .VersionId)" > \
 tables_clear.json
-
+# Count you tables in AWS
 for ((i=0;i<38;i++)) ; \
     do cat tables_clear.json | jq ".TableList[$i]" > \
     ${NEW_DB_NAME}/$(cat tables_clear.json | jq -r ".TableList[$i].Name").${NEW_DB_NAME}.json ; \

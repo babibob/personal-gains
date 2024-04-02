@@ -1,0 +1,59 @@
+---
+stages:
+  - test
+  - deploy
+
+validator:
+  stage: test
+  image: ${SERVICE_IMAGE}
+  environment:
+    name: branch/$CI_COMMIT_REF_NAME
+  script:
+    - "python3 scripts/func.py check"
+  only:
+    - merge_requests
+
+
+deploy-ovpn-conf:
+  stage: deploy
+  image: ${SERVICE_IMAGE}
+  environment:
+    name: branch/$CI_COMMIT_REF_NAME
+  variables:
+    TARGET_HOST01: <HOST01>
+    TARGET_HOST02: <HOST02>
+    GITLAB_ID_RSA: <SSH.PRIV>
+    SSH_USER: <USER>
+  script:
+    - "eval $(ssh-agent -s)"
+    - "ssh-add - <<< ${GITLAB_ID_RSA}"
+    - "ssh-keyscan -t rsa ${TARGET_HOST01} >> ~/.ssh/known_hosts"
+    - "ssh-keyscan -t rsa ${TARGET_HOST02} >> ~/.ssh/known_hosts"
+    - "python3 scripts/func.py migration"
+    - "ssh ${SSH_USER}@${TARGET_HOST02} rm -rf /etc/openvpn/{users,nft,scripts}/* "
+    - "scp -r nft/* ${SSH_USER}@${TARGET_HOST02}:/etc/openvpn/nft ; \
+        scp -r users/* ${SSH_USER}@${TARGET_HOST02}:/etc/openvpn/users ; \
+        scp -r scripts/connect.sh ${SSH_USER}@${TARGET_HOST02}:/etc/openvpn/scripts ; \
+        scp -r scripts/disconnect.sh ${SSH_USER}@${TARGET_HOST02}:/etc/openvpn/scripts ; \
+        scp -r example.user ${SSH_USER}@${TARGET_HOST02}:/etc/openvpn ; \
+        scp -r list ${SSH_USER}@${TARGET_HOST02}:/etc/openvpn"
+    - "cd ansible"
+    - "mkdir results && mkdir ../result"
+    - "ansible-galaxy collection install --no-cache community.general"
+    - "chmod 744 -R ../ansible"
+    - "python3 ../scripts/func.py create | xargs -I line ansible-playbook ./create_user.yml -e user_name=line"
+    - "python3 ../scripts/func.py revoke | xargs -I line ansible-playbook ./revoke_user.yml -e user_name=line "
+    - "ssh ${SSH_USER}@${TARGET_HOST02} sudo chmod 644 /etc/openvpn/keys/crl.pem"
+    - "ssh ${SSH_USER}@${TARGET_HOST01} rm -rf /etc/openvpn/{users,nft,scripts}/* "
+    - "scp -r ${SSH_USER}@${TARGET_HOST02}:/etc/openvpn/{users,nft,server.conf,keys/crl.pem,scripts} ${SSH_USER}@${TARGET_HOST01}:/etc/openvpn"
+    - "ls -Rdlh ${CI_PROJECT_DIR}/users/"
+    - "cp ${CI_PROJECT_DIR}/ansible/results/sel-ovpn02/* ${CI_PROJECT_DIR}/result/ || \
+      exit 0"
+  artifacts:
+    name: "ovpn config file"
+    paths:
+      - "${CI_PROJECT_DIR}/result/*.ovpn"
+      - "${CI_PROJECT_DIR}/result/*.pass"
+    expire_in: 2 days
+  only:
+    - master

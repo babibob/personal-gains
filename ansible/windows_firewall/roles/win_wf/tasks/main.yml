@@ -1,0 +1,51 @@
+---
+- name: Windows FW | Create directory structure
+  ansible.windows.win_file:
+    path: C:\firewall\logs
+    state: directory
+
+- name: Windows FW | Set logging file
+  win_shell: |
+    Set-NetFirewallProfile -All -LogFileName "C:\firewall\logs\firewall.log"
+
+- name: Windows FW | NEED FOR CORRECT WORK -- Ensure Firewall is disabled for all profile
+  win_shell: |
+    Set-NetFirewallProfile -All -Enabled False
+
+- name: Windows FW | Export default rules
+  win_shell: |
+      cmd.exe /c "netsh advfirewall export C:\firewall\firewall_default_rules%date:~7,2%%date:~4,2%%date:~10,4%.%time:~-5%.wfw"
+  register: export_firewall
+  changed_when: "'Ok.' in export_firewall.stdout"
+
+- name: Windows FW | Delete default rules
+  win_shell: |
+      foreach ($rule in Get-NetFirewallRule | Where-Object { $_.Direction -eq 'Inbound' })
+        { Remove-NetFirewallRule -DisplayName $rule.DisplayName }
+  ignore_errors: true
+  # register: delete_default
+  # changed_when: "'*Remove-NetFirewallRule DisplayName:*' in delete_default.stdout"
+
+- name: Windows FW | Create a file from a template
+  ansible.windows.win_template:
+    src: "{{ ci_project_dir }}/ansible/roles/windows_firewall/templates/wf_template.j2"
+    dest: C:\firewall\firewall_created_rules.ps1
+
+- name: Windows FW | Add rules
+  win_shell: |
+    . C:\firewall\firewall_created_rules.ps1
+  register: add_firewall
+  changed_when: add_firewall.rc == 1
+  failed_when: add_firewall.rc not in [ 0, 1 ]
+
+- name: Windows FW | Show rules log
+  ansible.builtin.debug:
+    msg: "{{ add_firewall.stdout }}"
+
+- name: Windows FW | Ensure Firewall is enabled for all profile
+  win_shell: |
+    Set-NetFirewallProfile -All -Enabled true -Verbose
+
+# - name: show templating results
+#   debug:
+#    msg: '{{ lookup("template", "{{ ci_project_dir }}/ansible/roles/windows_firewall/templates/wf_template.j2") }}'

@@ -1,0 +1,10 @@
+---
+- name: Applying firewall settings
+  hosts: "{{ lookup('env', 'HOST') }}"
+  vars:
+   ci_project_dir: "{{ lookup('env', 'CI_PROJECT_DIR') }}"
+  roles:
+   - role: win_wf
+     tags: windows_firewall
+     when: ansible_os_family == 'Windows'
+...

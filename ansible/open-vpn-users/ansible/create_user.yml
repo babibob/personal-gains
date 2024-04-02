@@ -1,0 +1,71 @@
+---
+- name: Create OVPN user
+  hosts: "{{ lookup('env', 'HOST') }}"
+#  vars_prompt:
+#  - name: user_name
+#    prompt: Enter user name
+#    private: no
+  tasks:
+  - name: Generate password
+    shell: PASSWORD=$(base64 < /dev/urandom | head -c12); echo "$PASSWORD"
+    register: shell_result
+  - set_fact:
+      password={{ shell_result.stdout }}
+  - name: OpenVPN build user cert & key
+    expect:
+      command: ./easyrsa build-client-full {{ user_name }}
+      responses:
+        'Enter PEM pass phrase:': "{{ password }}"
+      chdir: "/root/subCA/"
+  - name: "Copy user configs to ../config_users dir"
+    copy:
+      remote_src: yes
+      src: "/etc/openvpn/example.user"
+      dest: "{{ user_name }}.ovpn"
+  - name: "Hook cert and key for user conf"
+    shell: "{{ item }}"
+    loop:
+      - cat /root/subCA/pki/issued/{{ user_name }}.crt | sed -n '/^-----BEGIN CERTIFICATE-----$/,$p'
+      - cat /root/subCA/pki/private/{{ user_name }}.key
+    register: hook_cert_key
+  - name: "user cert & key to config file"
+    replace:
+      dest: "{{ item.dest }}"
+      regexp: "{{ item.regexp }}"
+      replace: "{{ item.replace }}"
+    with_items:
+      - { dest: "{{ user_name }}.ovpn", regexp: CERTPLACE, replace: "{{ hook_cert_key.results.0.stdout }}"}
+      - { dest: "{{ user_name }}.ovpn", regexp: KEYPLACE, replace: "{{ hook_cert_key.results.1.stdout }}"}
+  - name: Show generated password
+    debug: msg="{{ shell_result.stdout }}"
+  - name: download config
+    fetch:
+      src: "{{user_name}}.ovpn"
+      dest: results
+  - name: create file with password
+    shell: "echo {{ password }} > {{user_name}}.pass"
+  - name: download pass
+    fetch:
+      src: "{{user_name}}.pass"
+      dest: results
+  - name: clear password
+    shell: "echo > {{user_name}}.pass"
+
+#   - name: "Hook cert for user conf"
+#     shell: cat /root/subCA/pki/issued/{{ user_name }}.crt | sed -n '/^-----BEGIN CERTIFICATE-----$/,$p'
+#     register: cert
+#   - set_fact:
+#       user_cert={{ cert.stdout }}
+#   - name: "Hook key for user conf"
+#     shell: cat /root/subCA/pki/private/{{ user_name }}.key
+#     register: key
+#   - set_fact:
+#       user_key={{ key.stdout }}
+#   - name: "Copy user cert & key to config file"
+#     shell: "{{ item }}"
+#     with_items:
+#       - "CERTPLACE='{{ cert.stdout}}'; cat /etc/openvpn/example.user | xargs -I line echo line"
+# #      - sed -i 's/CERTPLACE/{{ cert.stdout }}/' /etc/openvpn/config_users/{{ user_name }}.ovpn
+#       - sed -i 's/KEYPLACE/{{ key.stdout }}/' /etc/openvpn/config_users/{{ user_name }}.ovpn
+#   - name: Show generated password
+#     debug: msg="{{ shell_result.stdout }}"

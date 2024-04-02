@@ -1,0 +1,53 @@
+Import-Module NetSecurity
+$exit_code = 0
+
+if (Get-NetFirewallRule -DisplayName 'sshd' -ErrorAction SilentlyContinue)
+{
+    echo "Remove rule for SSH-access from any IP's"
+    Remove-NetFirewallRule -DisplayName 'sshd' -Verbose
+} else {
+    echo "Rule for SSH-access from any IP's not found"
+}
+
+{% for item in rules_list %}
+    $name = "{{ item.name }}"
+    $description = "{{ 'managed by the ansible.'+ item.description | default('managed by the ansible. ') }}"
+    $protocol = "{{ item.protocol  | default ('TCP')}}"
+    $port = @("{{ item.port.replace(',', '","') }}")
+    $action = "{{ item.action | default ('allow')}}"
+    [Microsoft.PowerShell.Cmdletization.GeneratedTypes.NetSecurity.Profile] $profile = "{{ item.profile | default ('any')}}"
+    [Microsoft.PowerShell.Cmdletization.GeneratedTypes.NetSecurity.Direction] $direction = "{{ item.direction | default ("Inbound")}}"
+
+    $ip_list = [System.Collections.ArrayList]@()
+    $dns_list = "{{ item.ip.replace(',', '","') }}"
+
+    foreach ($dns in $dns_list)
+    {
+    if ($dns -match '(\d{1,3}\.){3}\d{1,3}')
+    {
+        $ip_list += $dns
+    } elseif ($dns -eq 'any') {
+        $ip_list = 'any'
+    } else {
+        $ip_addr = (Resolve-DNSName $dns | Where-Object {$_.IPAddress -like "*.*.*.*"}).ipaddress
+        $ip_list += $ip_addr
+    }}
+
+    if (Get-NetFirewallRule -DisplayName $name -ErrorAction SilentlyContinue)
+    {
+        echo "${direction} rule ${name}/${description}: Found!"
+    } else {
+        echo "${direction} rule ${name}/${description}: Not found, adding!"
+        New-NetFirewallRule -DisplayName $name -Description $description -LocalPort $port -Action $action -Profile $profile -Direction $direction -Protocol $protocol -RemoteAddress $ip_list
+        $exit_code++
+    }
+
+{%if loop.last %}
+$expected_lenght = {{ loop.length }}
+{% endif %}
+{% endfor %}
+
+if ($exit_code -eq $expected_lenght )
+{
+exit 1
+}

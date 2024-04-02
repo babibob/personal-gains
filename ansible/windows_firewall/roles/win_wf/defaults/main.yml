@@ -1,0 +1,7 @@
+---
+all: "0.0.0.0/0"
+all_ipv6: "::/0"
+
+jump_server: "example.local"
+monitoring: "example.io"
+...

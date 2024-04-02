@@ -1,0 +1,43 @@
+client
+dev tun
+proto udp
+remote <HOST01> 1194
+remote <HOST02> 1194
+remote-random
+#tls-auth 1
+ping 10
+ping-restart 40
+resolv-retry infinite
+nobind
+persist-key
+persist-tun
+remote-cert-tls server
+cipher AES-256-CBC
+verb 3
+
+#tls-auth ta.key 1
+key-direction 1
+<ca>
+-----BEGIN CERTIFICATE-----
+1111
+-----END CERTIFICATE-----
+</ca>
+<cert>
+CERTPLACE
+</cert>
+<extra-certs>
+-----BEGIN CERTIFICATE-----
+2222
+-----END CERTIFICATE-----
+</extra-certs>
+<key>
+KEYPLACE
+</key>
+<tls-crypt>
+#
+# 2048 bit OpenVPN static key
+#
+-----BEGIN OpenVPN Static key V1-----
+33333
+-----END OpenVPN Static key V1-----
+</tls-crypt>
