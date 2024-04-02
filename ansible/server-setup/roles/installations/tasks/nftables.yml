@@ -1,0 +1,48 @@
+---
+- name: install nftables
+  ansible.builtin.package:
+    name: nftables
+    state: present
+- name: sending configuration
+  copy:
+    src: nftconf/nftables{{ nft_type }}.conf
+    dest: /etc/nftables.conf
+    mode: '0644'
+    owner: root
+    group: root
+  become: true
+  when: nft_type is defined
+- name: sending configuration
+  copy:
+    src: nftconf/nftables.conf
+    dest: /etc/nftables.conf
+    mode: '0644'
+    owner: root
+    group: root
+  become: true
+  when: nft_type is undefined
+- name: remove old iptables rules
+  iptables:
+    flush: true
+- name: prepare configuration
+  replace:
+    dest: /etc/nftables.conf
+    regexp: MAIN
+    replace: "{{ ansible_facts.default_ipv4.interface }}"
+- name: Enable nftables
+  service:
+    name: nftables
+    enabled: true
+    state: started
+- name: remove iptables-persistent
+  ansible.builtin.package:
+    name: iptables-persistent
+    state: absent
+- name: start nftables
+  shell: |
+    nft -f /etc/nftables.conf &&
+    update-alternatives --set iptables /usr/sbin/iptables-nft &&
+    update-alternatives --set ip6tables /usr/sbin/ip6tables-nft
+  register: nft
+  failed_when: nft.rc == 0 or nft.rc == 1
+...

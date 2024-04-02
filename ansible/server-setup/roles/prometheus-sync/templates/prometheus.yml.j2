@@ -1,0 +1,235 @@
+---
+  # http://prometheus.io/docs/operating/configuration/
+global:
+  evaluation_interval: 1m # How frequently to evaluate rules.
+  scrape_interval: 40s # How frequently to scrape targets by default.
+  scrape_timeout: 30s # How long until a scrape request times out.
+  external_labels:
+    environment: prometheus
+remote_read:
+  - url: https://prometheus.marketplace.local.maf.io/metrics
+    basic_auth:
+      username: operator
+      password: stop6resent7sore
+rule_files:
+  - /etc/prometheus/rules/*.rules
+alerting:
+  alertmanagers:
+  - static_configs:
+    - targets:
+      - 127.0.0.1:9093
+
+scrape_configs:
+  # - job_name: n1.redis-cl.msk3.slt.maf.ru
+  #   scrape_interval: 10s
+  #   static_configs:
+  #   - targets:
+  #     - n1.redis-cl.msk3.slt.maf.ru:9126
+  # - job_name: n2.redis-cl.msk3.slt.maf.ru
+  #   scrape_interval: 10s
+  #   static_configs:
+  #   - targets:
+  #     - n2.redis-cl.msk3.slt.maf.ru:9126
+  # - job_name: n3.redis-cl.msk3.slt.maf.ru
+  #   scrape_interval: 10s
+  #   static_configs:
+  #   - targets:
+  #     - n3.redis-cl.msk3.slt.maf.ru:9126
+  # - basic_auth:
+  #     password: ju0uucohGee0
+  #     username: monitoring
+  #   honor_labels: true
+  #   job_name: k8s-prod
+  #   metric_relabel_configs:
+  #   - action: labeldrop
+  #     regex: prometheus_replica
+  #   metrics_path: /federate
+  #   params:
+  #     match[]:
+  #     - '{__name__=~".+"}'
+  #   scheme: https
+  #   scrape_interval: 30s
+  #   scrape_timeout: 30s
+  #   static_configs:
+  #   - labels:
+  #       cluster: prod
+  #     targets:
+  #     - prometheus-k8s.maf.io
+  - honor_labels: true
+    job_name: push_gateway
+    static_configs:
+    - targets:
+      - 127.0.0.1:9091
+  # - job_name: n2.redis-kafka
+  #   static_configs:
+  #   - targets:
+  #     - 80.66.91.133:9308
+  # - job_name: n3.redis-kafka
+  #   static_configs:
+  #   - targets:
+  #     - 80.66.91.186:9308
+  - job_name: blackbox
+    metrics_path: /probe
+    params:
+      module:
+      - http_post
+    relabel_configs:
+    - source_labels:
+      - __address__
+      target_label: __param_target
+    - source_labels:
+      - __param_target
+      target_label: instance
+    - replacement: 127.0.0.1:9115
+      target_label: __address__
+    scrape_interval: 30s
+    static_configs:
+    - targets:
+      - https://api.maf.ru/sales/create_session
+      - https://apiuser:Apiuser333@oktell.maf.ru:4050/tst_getintnumberreadyusers?number=500
+  - job_name: windows
+    scrape_interval: 30s
+    file_sd_configs:
+      - files:
+        - scrape_configs/windows.yml
+  - consul_sd_configs:
+    - server: localhost:8500
+      services:
+      - node-exporter
+    job_name: consul
+    relabel_configs:
+    - source_labels:
+      - __meta_consul_service
+      target_label: job
+    - source_labels:
+      - __meta_consul_node
+      target_label: node
+  #
+  #
+  # maf 2
+  #
+  #
+  - job_name: 'bacula'
+    file_sd_configs:
+      - files:
+        - scrape_configs/bacula.yml
+  - job_name: 'clickhouse'
+    file_sd_configs:
+      - files:
+        - scrape_configs/clickhouse.yml
+  - job_name: 'database'
+    file_sd_configs:
+      - files:
+        - scrape_configs/database.yml
+  - job_name: 'entry'
+    file_sd_configs:
+      - files:
+        - scrape_configs/entry.yml
+  - job_name: 'k8s'
+    file_sd_configs:
+      - files:
+        - scrape_configs/k8s.yml
+  - job_name: 'mongo'
+    file_sd_configs:
+      - files:
+        - scrape_configs/mongo.yml
+  - job_name: 'mysql'
+    file_sd_configs:
+      - files:
+        - scrape_configs/mysql.yml
+  - job_name: 'elk'
+    file_sd_configs:
+      - files:
+        - scrape_configs/elk.yml
+  - job_name: 'nginx'
+    file_sd_configs:
+      - files:
+        - scrape_configs/nginx.yml
+  - job_name: 'service'
+    file_sd_configs:
+      - files:
+        - scrape_configs/service.yml
+  - job_name: 'sql-metrics'
+    file_sd_configs:
+      - files:
+        - scrape_configs/sql-metrics.yml
+  - job_name: 'centos'
+    file_sd_configs:
+      - files:
+        - scrape_configs/centos.yml
+  - job_name: 'anti-fraud'
+    file_sd_configs:
+      - files:
+        - scrape_configs/anti-fraud.yml
+  - job_name: 'macos'
+    file_sd_configs:
+      - files:
+        - scrape_configs/macos.yml
+  - job_name: 'rabbitmq-exporter'
+    file_sd_configs:
+      - files:
+        - scrape_configs/rabbitmq-exporter.yml
+  - job_name: 'gitlab_pipelines'
+    file_sd_configs:
+      - files:
+        - scrape_configs/gitlab.yml
+  - job_name: 'blackbox-ssl'
+    metrics_path: /probe
+    params:
+      module: [ http_2xx ]
+    file_sd_configs:
+      - files:
+        - scrape_configs/blackbox-ssl.yml
+    relabel_configs:
+      - source_labels: [ __address__ ]
+        target_label: __param_target
+      - source_labels: [ __param_target ]
+        target_label: instance
+      - target_label: __address__
+        replacement: bacula-dir.local.maf.io:9115
+
+{% for host in groups['all'] %}
+  - job_name: '{{ hostvars[host].inventory_hostname }}'
+    scrape_interval: 10s
+    static_configs:
+      - targets: ['{{ hostvars[host].ansible_ssh_host }}:9126']
+{%   for item in prometheus_targets %}
+{% if 'hosts' in item %}
+{%   if hostvars[host].inventory_hostname in item.hosts %}
+      - targets: ['{{ hostvars[host].ansible_ssh_host }}:{{ item.port }}']
+{%   endif %}
+{% endif %}
+{% endfor %}
+{% if 'groups' in item %}
+{%     for group in item.groups %}
+{%   if hostvars[host].inventory_hostname in groups[group] %}
+      - targets: ['{{ hostvars[host].ansible_ssh_host }}:{{ item.port }}']
+{%   endif %}
+{%     endfor %}
+{% endif %}
+
+{% endfor %}
+
+...
+### Yandex Cloud ###
+#   - job_name: 'yc-monitoring-export'
+#     metrics_path: '/monitoring/v2/prometheusMetrics'
+#     params:
+#       folderId:
+#       - 'b1gphh36aignq8k2t5l0'
+#       service:
+#       - 'compute'
+#       - 'storage'
+#       - 'managed-kubernetes'
+#       - 'serverless-functions'
+#       - 'serverless_triggers_client_metrics'
+#       - 'certificate-manager'
+#       - 'data-transfer'
+#       - 'data-proc'
+#       - 'serverless-apigateway'
+#       bearer_token: AQAAAAAJSGNlAATuwVib-UNv30vUsDxsDYhh4L0
+#           static_configs:
+#   - targets: ['monitoring.api.cloud.yandex.net']
+#     labels:
+#       folderId: '<folderId>'
+#       service: '<serviceId>'

@@ -1,0 +1,27 @@
+---
+# tasks file for installations
+- name: Import minimal
+  import_tasks: 'tasks/minimal.yml'
+  when: minimal == '1'
+- name: Import optional
+  import_tasks: 'tasks/nginx.yml'
+  when: nginx == '1'
+- import_tasks: 'tasks/php.yml'
+  when: php == '1'
+- import_tasks: 'tasks/beats.yml'
+  when: beats == '1'
+- import_tasks: 'tasks/nftables.yml'
+  when: nftables == '1'
+- import_tasks: 'tasks/bacula.yml'
+  when: bacula == '1'
+- import_tasks: 'tasks/percona.yml'
+  when: percona == '1'
+- import_tasks: 'tasks/redis.yml'
+  when: redis == '1'
+- import_tasks: 'tasks/mongodb.yml'
+  when: mongodb == '1'
+- import_tasks: 'tasks/clickhouse.yml'
+  when: clickhouse == '1'
+- import_tasks: 'tasks/docker.yml'
+  when: docker == '1'
+...

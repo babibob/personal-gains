@@ -1,0 +1,19 @@
+---
+- hosts: "{{ host }}"
+  become: true
+  ignore_errors: true
+  vars_prompt:
+  - name: host
+    prompt: hostname from inventory
+    private: false
+  tasks:
+  - name: Show 'ansible_default_ipv4'
+    debug:
+      msg: "{{ hostvars[inventory_hostname]['ansible_default_ipv4']['address'] }}"
+  - name: Show 'dig ansible_host'
+    debug:
+      msg: "{{ lookup('dig', ansible_host) }}"
+  - name: Show 'tap0.ipv4.address'
+    debug:
+      msg: "{{ ansible_facts.tap0.ipv4.address }}"
+...

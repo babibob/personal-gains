@@ -1,0 +1,21 @@
+---
+- hosts: "{{ host }}"
+  become: true
+  ignore_errors: true
+  vars_prompt:
+  - name: host
+    prompt: host/group from inventori (for example 'entry' group)
+    private: False
+  - name: tinc_hostname
+    prompt: delete tinc client hostname (without '-')
+    private: False
+
+  tasks:
+  - name: Remove file (delete file)
+    ansible.builtin.file:
+      path: '{{ item }}/{{ tinc_hostname }}'
+      state: absent
+    loop:
+      - /etc/tinc/l2vpnnet/hosts
+      - /etc/tinc/l2vpnnet
+...

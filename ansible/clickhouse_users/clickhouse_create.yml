@@ -1,0 +1,55 @@
+---
+- hosts: clickhouse01
+  vars_prompt:
+  - name: username
+    prompt: enter username (!!!without '.')
+    private: false
+  become: false
+  tasks:
+  - name: Generate password
+    shell: PASSWORD=$(base64 < /dev/urandom | head -c12); echo "$PASSWORD"
+    register: shell_result
+  - set_fact:
+      password={{shell_result.stdout}}
+  - name: Secure password
+    shell: echo -n "{{ password }}" | sha256sum | tr -d '-' | tr -d ' '
+    register: secured_password
+  - set_fact:
+      secure={{ secured_password.stdout }}
+  - name: Copy config
+    copy:
+      src: ../clickhouse_ro.xml
+      dest: /etc/clickhouse-server/users.d/{{ username }}.xml
+      mode: '0644'
+      owner: root
+      group: root
+    become: true
+    delegate_to: "{{ item }}"
+    with_items:
+    - clickhouse01
+    - clickhouse02
+  - name: Set username
+    replace:
+      dest: /etc/clickhouse-server/users.d/{{ username }}.xml
+      regexp: USERNAME
+      replace: "{{ username }}"
+      #     shell: "sed -i 's/USERNAME/{{ username }}/' /etc/clickhouse-server/users.d/{{ username }}.xml"
+    become: true
+    delegate_to: "{{ item }}"
+    with_items:
+      - clickhouse01
+      - clickhouse02
+  - name: Set password
+    replace:
+      dest: /etc/clickhouse-server/users.d/{{ username }}.xml
+      regexp: USER_PASSWORD
+      replace: "{{ secure }}"
+      #     shell: "sed -i 's/USER_PASSWORD/{{ secure }}/' /etc/clickhouse-server/users.d/{{ username }}.xml"
+    become: true
+    delegate_to: "{{ item }}"
+    with_items:
+      - clickhouse01
+      - clickhouse02
+  - name: Show generated password
+    debug: msg="{{ shell_result.stdout }}"
+...

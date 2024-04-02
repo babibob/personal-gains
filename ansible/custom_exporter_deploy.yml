@@ -1,0 +1,34 @@
+---
+- hosts: "{{ host }}"
+  # cp daemons/exporter/exporter-daemon.conf.yaml temp/
+  become: true
+  ignore_errors: true
+  tasks:
+  - name: Install pip
+    ansible.builtin.package:
+      name: python3-pip
+
+  - name: Install python-package pyyaml
+    pip:
+      name: pyyaml
+
+  - name: Deploy configuration
+    template:
+      src: "{{ item.src }}"
+      dest: "{{ item.dest }}"
+      owner: root
+      group: root
+      mode: "{{ item.mode | default('644')  }}"
+    loop:
+      - {src: '../temp/exporter-daemon.conf.yaml', dest: '/usr/local/etc/exporter-daemon.conf.yaml'}
+      - {src: '../daemons/exporter/exporter-daemon.py', dest: '/usr/local/bin/exporter-daemon.py', mode: '744'}
+      - {src: '../daemons/exporter/exporter-daemon.service', dest: '/etc/systemd/system/exporter-daemon.service'}
+
+  - name: start and enable service
+    systemd:
+      enabled: true
+      name: exporter-daemon
+      masked: false
+      daemon_reload: true
+      state: restarted
+...

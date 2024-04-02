@@ -1,0 +1,15 @@
+apiVersion: 1
+
+providers:
+ - name: 'per-server-metrics'
+   orgId: 1
+   folder: 'Per server metrics'
+   type: file
+   options:
+     path: /var/lib/grafana/dashboards/per-server-metrics
+ - name: 'custom dashboards'
+   orgId: 1
+   folder: 'maf dashboards'
+   type: file
+   options:
+     path: /var/lib/grafana/dashboards/custom-dashboards

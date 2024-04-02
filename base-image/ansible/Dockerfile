@@ -10,7 +10,7 @@ SHELL ["/bin/bash", "-eo", "pipefail", "-c"]
 
 RUN mkdir -vpm 0600 /opt/ansible/
 WORKDIR /opt/ansible/
-COPY ./playbooks ./playbooks
+# COPY ./playbooks ./playbooks
 COPY ./.ansible-lint.yml .
 
 

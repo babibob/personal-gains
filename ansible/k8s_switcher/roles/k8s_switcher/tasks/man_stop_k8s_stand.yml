@@ -1,0 +1,17 @@
+---
+- name: Edit deploy and sts
+  shell: |
+    kubectl -n "{{ k8s_ns }}" get deploy,sts --no-headers=true | awk '{print $1 }'| xargs -I line kubectl -n "{{ k8s_ns }}" patch line --type json -p='[{"op":"replace","path":"/spec/replicas", "value":0}]'
+
+- name: Edit CronJobs
+  shell: |
+    kubectl -n "{{ k8s_ns }}" get cj --no-headers=true | awk '{print $1}'| xargs -I line kubectl -n "{{ k8s_ns }}" patch cj line --type json -p='[{"op":"replace","path":"/spec/suspend", "value":true}]'
+
+- name: Edit Label run
+  shell: |
+    kubectl label ns "{{ k8s_ns }}" run=0 --overwrite
+
+- name: Edit Label free
+  shell: |
+    kubectl label ns "{{ k8s_ns }}" free=1 --overwrite
+...

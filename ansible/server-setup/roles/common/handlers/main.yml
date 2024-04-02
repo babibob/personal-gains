@@ -1,0 +1,6 @@
+---
+  - name: restart sshd centos
+    service:
+      name: sshd
+      state: restarted
+    when: ansible_distribution == "CentOS"

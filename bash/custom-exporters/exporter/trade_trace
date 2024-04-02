@@ -1,0 +1,3 @@
+/usr/local/bin/exporter-daemon.py
+        os.system("echo 'exporter_daemon_trade_latency{target=\""+key+"\"} "+trace_latency[:-1]+"' >> "+draftfile)
+        os.system("echo 'exporter_daemon_trace_latency{target=\""+key+"\"} "+trace_latency[:-1]+"' >> "+draftfile)

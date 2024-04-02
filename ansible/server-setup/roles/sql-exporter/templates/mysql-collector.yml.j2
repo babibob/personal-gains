@@ -1,0 +1,14 @@
+collector_name: mysql_query
+
+# Similar to global.min_interval, but applies to the queries defined by this collector only.
+#min_interval: 0s
+
+metrics:
+{% for item in monitoring_queues %}
+  - metric_name: {{ item | replace("-", "_") | replace(".", "_") }}_count
+    type: gauge
+    help: 'Number of messages in {{ item | replace("-", "_") | replace(".", "_") }} queue'
+    values: [COUNT(*)]
+    query: |
+      SELECT COUNT(*) from jobs where queue="{{ item }}" 
+{% endfor %}

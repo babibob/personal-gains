@@ -1,0 +1,22 @@
+---
+filebeat.config.modules:
+  path: ${path.config}/modules.d/*.yml
+  reload.enabled: false
+
+setup.template.settings:
+  index.number_of_shards: 10
+
+setup.kibana:
+  host: "https://syslog.teletrade-dj.com:443"
+  username: "rotator"
+  password: "f3TpsdsZSpNIH"
+
+output.elasticsearch:
+  hosts: ["syslog.teletrade-dj.com:9200"]
+  username: "rotator"
+  password: "f3TpsdsZSpNIH"
+
+processors:
+  - add_host_metadata: ~
+  - add_cloud_metadata: ~
+...

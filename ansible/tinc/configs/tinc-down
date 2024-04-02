@@ -1,0 +1,13 @@
+#!/bin/bash
+post-down ip route del 10.101.0.0/16 via 10.225.16.12
+post-down ip route del 192.168.101.0/24 via 10.225.16.26
+post-down ip route del 10.116.0.0/24 via 10.225.16.11
+post-down ip route del 10.117.0.0/24 via 10.225.16.14
+post-down ip route del 10.118.0.0/24 via 10.225.16.15
+post-down ip route add 10.125.0.0/16 via 10.225.16.16
+post-down ip route add 10.126.0.0/16 via 10.225.16.16
+post-down ip route del 10.127.0.0/16 via 10.225.16.16
+post-down ip route del 10.128.0.0/24 via 10.225.16.13
+ip route del 10.225.16.0/24 dev $INTERFACE
+ip addr del 10.225.16.IPTINC/32 dev $INTERFACE
+ip link set $INTERFACE down

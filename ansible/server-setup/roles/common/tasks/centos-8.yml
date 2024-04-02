@@ -1,0 +1,100 @@
+---
+
+  - name: Uninstall some packages
+    dnf:
+      name: "{{ packages }}"
+      state: absent
+    vars:
+      packages:
+        - firewalld
+        - postfix
+        - nftables
+
+  - name: Disabling SELinux...
+    selinux:
+      policy: targeted
+      state: permissive
+
+  - name: Install epel repo
+    dnf:
+      name: epel-release
+      state: present
+
+  - name: Install common packages
+    dnf:
+      name: "{{ packages }}"
+      state: latest
+    vars:
+      packages:
+        - atop
+        - ethtool
+        - bash-completion 
+        - bind-utils
+        - bzip2
+        - dnf-utils
+        - git-core
+        - htop
+        - iftop
+        - iotop
+        - iptables-services
+        - jq
+        - lsof
+        - mc
+        - mlocate
+        - nano
+        - nc
+        - net-tools
+        - network-scripts
+        - chrony
+        - perf
+        - rsync
+        - screen
+        - strace
+        - sysstat
+        - tcpdump
+        - telnet
+        - tmux
+        - vim
+        - wget
+        - unzip
+
+  - name: Setting timezone to Nicosia
+    timezone: name=Europe/Nicosia
+
+  - name: Copy systemd unit /etc/systemd/system/disable-thp.service (Disable Transparent Huge Pages)
+    copy:
+      src: disable-thp.service
+      dest: /etc/systemd/system/disable-thp.service
+      owner: root
+      group: root
+      mode: 644
+
+  - name: Enabling services
+    systemd:
+      name: "{{ item }}"
+      state: started
+      enabled: yes
+      daemon_reload: yes
+    with_items:
+      - "iptables"
+      - "chronyd"
+      - "disable-thp"
+
+  - name: Enable system modules
+    block:
+      - name: Create modules conf files
+        lineinfile:
+          create: yes
+          path: "{{ item.path }}"
+          line: "{{ item.line }}"
+          mode: '0644'
+        with_items:
+          - { path: /etc/modules-load.d/nf_conntrack.conf, line: nf_conntrack}
+
+      - name: Load system modules
+        modprobe:
+          name: "{{ item }}"
+          state: present
+        with_items:
+          - nf_conntrack
+

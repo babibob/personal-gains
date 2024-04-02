@@ -1,0 +1,4 @@
+#!/usr/bin/expect
+spawn /var/ossec/bin/manage_agents
+expect "** Press ENTER to return to the main menu."
+send -- "\r"

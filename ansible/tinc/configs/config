@@ -1,0 +1,4 @@
+Address =  REALIP 655
+Cipher = aes-128-cbc
+Digest = sha1
+Compression = 0

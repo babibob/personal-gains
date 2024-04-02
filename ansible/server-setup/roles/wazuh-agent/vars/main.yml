@@ -1,0 +1,1 @@
+host_key: "{{ lookup('pipe', 'vault kv get -address=https://vault.maf.io -field={{ inventory_hostname}} infra/alienvault/usehosts') }}"

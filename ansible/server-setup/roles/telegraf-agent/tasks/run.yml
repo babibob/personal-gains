@@ -1,0 +1,6 @@
+---  
+- name: Starting Telegraf agent
+  service:
+    name: telegraf
+    state: started
+    enabled: yes

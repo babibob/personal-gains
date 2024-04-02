@@ -1,0 +1,83 @@
+---
+- name: Install Python
+  raw: test -e /usr/bin/apt && (apt -y update && apt install -y python3) || (yum -y install python3 libselinux-python)
+- name: Debian install software
+  apt:
+    name: "{{ apt_packages }}"
+    update_cache: true
+    state: present
+  when: ansible_os_family == "Debian"
+- name: RedHat install software
+  yum:
+    name: "{{ yum_packages }}"
+    state: latest
+    update_cache: true
+    exclude: kernel*,foo*
+  when: ansible_os_family == "RedHat"
+
+- name: Create group
+  group:
+    name: "{{ item }}"
+    state: present
+  loop: "{{ username }}"
+- name: Create users
+  user:
+    name: "{{ item }}"
+    create_home: true
+    home: /home/{{item}}
+    groups:
+    - "{{ item }}"
+    - sudo
+    shell: /bin/bash
+    state: present
+  loop: "{{ username }}"
+- name: Create directories for guys
+  file:
+    path: "/home/{{ item[0] }}/{{ item[1] }}"
+    state: directory
+    owner: "{{ item[0] }}"
+    group: "{{ item[0] }}"
+  loop: "{{ username | product(['.ssh', '.vim']) | list }}"
+- name: Set authorized key taken from file/spubkeys_(guys)
+  ansible.posix.authorized_key:
+    user: "{{ item }}"
+    state: present
+    key: "{{ lookup('file', 'templates/basic_conf/pubkeys_{{ item }}') }}"
+  loop: "{{ username }}"
+- name: Create directories for big boy
+  file:
+    path: /root/{{ item }}
+    state: directory
+    owner: root
+    group: root
+  loop: ['.ssh', '.vim']
+
+- name: Copy configurations for guys
+  copy:
+    src: "./templates/basic_conf/{{ item[1] }}"
+    dest: "/home/{{ item[0] }}/{{ item[1] }}"
+    owner: "{{ item[0] }}"
+    group: "{{ item[0] }}"
+    mode: '644'
+  loop: "{{ username|product(tempalate_files)|list }}"
+  # username - item[0] tempalate_files - item[1]
+  # - {src: 'templates/basic_conf/.bashrc', dest: '/home/{{ username[0] }}/.bashrc', owner: '{{ username[0] }}', group: '{{ username[0] }}'}
+  # - {src: 'templates/basic_conf/.profile', dest: '/home/{{ username[0] }}/.profile', owner: '{{ username[0] }}', group: '{{ username[0] }}'}
+  # - {src: 'templates/basic_conf/.vimrc', dest: '/home/{{ username[0] }}/.vimrc', owner: '{{ username[0] }}', group: '{{ username[0] }}'}
+- name: Copy configurations root
+  template:
+    src: "{{ item.src }}"
+    dest: "{{ item.dest }}"
+    owner: root
+    group: root
+    mode: "{{ item.mode | default('644')  }}"
+  loop:
+    - { src: 'templates/basic_conf/root_bashrc', dest: '/root/.bashrc' }
+    - { src: 'templates/basic_conf/.vimrc', dest: '/root/.vimrc' }
+    - { src: 'templates/basic_conf/sshd_config', dest: '/etc/ssh/sshd_config'}
+    - { src: 'templates/basic_conf/sudoers.j2', dest: '/etc/sudoers', mode: '440'}
+- name: restart service sshd
+  service:
+    name: sshd.service
+    state: reloaded
+...

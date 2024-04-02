@@ -1,0 +1,53 @@
+---
+  - name: Create scripts directory
+    file:
+      path: "{{ item }}"
+      state: directory
+      owner: root
+      group: root
+      mode: 0755
+    loop:
+      - /opt/scripts/
+
+  - name: Synchronizing backup script
+    synchronize:
+      src: "{{ item.src }}"
+      dest: "{{ item.dest }}"
+      owner: "{{ item.owner }}"
+      group: "{{ item.group }}"
+      perms: "{{ item.perms }}"
+      mode: push
+    loop:
+      - { src: files/backup.sh, dest: /opt/scripts/backup.sh, owner: no, group: no, perms: yes }
+
+  - name: Copying ssh-key
+    copy:
+      content: "{{ item.content }}"
+      dest: "{{ item.dest }}"
+      owner: "{{ item.owner }}"
+      group: "{{ item.group }}"
+      mode: "{{ item.mode }}"
+    loop:
+      - { content: "{{ bacula_backup_key }}", dest: /root/.ssh/bacula-backup-rsa, owner: root, group: root, mode: '0600' }
+
+  - name: Installing cron for CentOS
+    copy:
+      src: "{{ item.src }}"
+      dest: "{{ item.dest }}"
+      owner: "{{ item.owner }}"
+      group: "{{ item.group }}"
+      mode: "{{ item.mode }}"
+    loop:
+      - { src: files/backup-centos, dest: /etc/cron.d/backup, owner: root, group: root, mode: "0644" }
+    when: ansible_distribution == "CentOS"
+
+  - name: Installing cron for other OS
+    copy:
+      src: "{{ item.src }}"
+      dest: "{{ item.dest }}"
+      owner: "{{ item.owner }}"
+      group: "{{ item.group }}"
+      mode: "{{ item.mode }}"
+    loop:
+      - { src: files/backup-deb, dest: /etc/cron.d/backup, owner: root, group: root, mode: "0644" }
+    when: ansible_distribution != "CentOS"

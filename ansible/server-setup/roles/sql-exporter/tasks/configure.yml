@@ -1,0 +1,33 @@
+- name: Installing sql-exporter unit
+  copy:
+    src: sql_exporter.service
+    dest: /lib/systemd/system/sql_exporter.service
+    owner: root
+    group: root
+    mode: "0644"
+  tags: configure
+
+- name: Force systemd to reread configs
+  systemd:
+    daemon_reload: yes
+  tags: configure
+
+- name: Installing sql-exporter main config
+  copy:
+    src: sql_exporter.yml
+    dest: /etc/sql_exporter
+    owner: root
+    group: root
+    mode: "0644"
+  tags: configure
+
+- name: Syncing sql-exporter config
+  template:
+    src: "{{ item.src }}"
+    dest: "{{ item.dest }}"
+    owner: "{{ item.owner }}"
+    group: "{{ item.group }}"
+    mode: "{{ item.mode }}"
+  loop:
+    - { src: mysql-collector.yml.j2, dest: /etc/sql_exporter/mysql-collector.yml, owner: root, group: root, mode: 644 }
+  tags: configure

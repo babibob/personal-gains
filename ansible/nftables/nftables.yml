@@ -1,0 +1,52 @@
+---
+- name: Install and config nftables
+  become: true
+  vars_prompt:
+    - name: host
+      prompt: hostname for installing and configuring nftables (from infra file)
+      private: False
+  hosts: "{{ host }}"
+  tasks:
+
+    - name: Install nftables
+      ansible.builtin.package:
+        name: nftables
+        state: present
+
+    - name: Sending configuration
+      when: nft_type is undefined
+      copy:
+        src: nftables.example/nftables.conf
+        dest: /etc/nftables.conf
+        mode: '0644'
+        owner: root
+        group: root
+
+    - name: Sending configuration
+      when: nft_type is defined # Variable from inventory
+      copy:
+        src: nftables.example/nftables{{ nft_type }}.conf
+        dest: /etc/nftables.conf
+        mode: '0644'
+        owner: root
+        group: root
+
+    - name: Remove old iptables rules
+      iptables:
+        flush: true
+
+    - name: Prepare configuration
+      replace:
+        dest: /etc/nftables.conf
+        regexp: MAIN
+        replace: "{{ ansible_facts.default_ipv4.interface }}"
+
+    - name: Enable nftables
+      service:
+        name: nftables
+        enabled: true
+        state: started
+
+    - name: start nftables
+      shell: nft -f /etc/nftables.conf
+...

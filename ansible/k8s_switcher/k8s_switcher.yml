@@ -1,0 +1,18 @@
+---
+- hosts: localhost
+  ignore_errors: true
+  roles:
+    - role: k8s_switcher
+  vars:
+    observer_status_link: "getStandsStatusPromQL"
+    k8s_ns_up: "addInQueueUp"
+    k8s_ns_down: "addInQueueDown"
+    observer_link: "https://<KLUSTER_NAME>/service/observer"
+  vars_prompt:
+    - name: k8s_ns
+      prompt: "Please enter namespace"
+      private: false
+    - name: action_type
+      prompt: "\nWhat kind of action do you need?\n1-autostart \n2-autostop \n3-manstart \n4-manstop \n"
+      private: false
+...

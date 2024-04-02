@@ -1,0 +1,14 @@
+#!/bin/sh
+ip link set $INTERFACE up
+    hwaddress ether RANDOMMAC
+    ip addr add 10.225.16.IPTINC/32 dev $INTERFACE
+    ip route add 10.225.16.0/24 dev $INTERFACE
+    post-up ip route add 10.101.0.0/16 via 10.225.16.12
+    post-up ip route add 192.168.101.0/24 via 10.225.16.26
+    post-up ip route add 10.116.0.0/24 via 10.225.16.11
+    post-up ip route add 10.117.0.0/24 via 10.225.16.14
+    post-up ip route add 10.118.0.0/24 via 10.225.16.15
+    post-up ip route add 10.125.0.0/16 via 10.225.16.16
+    post-up ip route add 10.126.0.0/16 via 10.225.16.16
+    post-up ip route add 10.127.0.0/16 via 10.225.16.16
+    post-up ip route add 10.128.0.0/24 via 10.225.16.13

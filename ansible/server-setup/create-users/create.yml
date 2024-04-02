@@ -1,0 +1,67 @@
+---
+- name: create sudo user
+  vars_prompt:
+    - name: host
+      prompt: HOSTANME = where create sudo user (from infra file)
+      private: false
+    - name: user
+      prompt: USERNAME = filename from configs.example/pub.keys/
+      private: false
+  hosts: "{{ host }}"
+  become: true
+  tasks:
+  - name: Create group
+    group:
+      name: "{{ user }}"
+      state: present
+  - name: Create users
+    user:
+      name: "{{ user }}"
+      create_home: true
+      home: /home/{{user}}
+      groups:
+      - "{{ user }}"
+      - sudo
+      shell: /bin/bash
+      state: present
+    when: ansible_os_family == "Debian"
+  - name: Create users
+    user:
+      name: "{{ user }}"
+      create_home: true
+      home: /home/{{user}}
+      groups:
+      - "{{ user }}"
+      - wheel
+      shell: /bin/bash
+      state: present
+    when: ansible_os_family == "RedHat"
+  - name: Set authorized key taken from ../configs.example/pub.keys/(username)
+    ansible.posix.authorized_key:
+      user: "{{ user }}"
+      state: present
+      key: "{{ lookup('file', '../configs.example/pub.keys/{{ user }}') }}"
+  - name: Add user to sudoers
+    lineinfile:
+      path: /etc/sudoers
+      line: "{{ user }} ALL=(ALL) NOPASSWD: ALL"
+      state: present
+    when: ansible_os_family == "RedHat"
+  # - name: Creating new user
+  #   shell: /usr/sbin/useradd {{ user }} -p "{{ password }}" -s /bin/bash
+  #   register: shell_result
+  # - name: Add to group sudo
+  #   shell: /usr/sbin/usermod -a -G sudo {{ user }}
+  #   register: shell_result
+  # - name: Creating user directory
+  #   shell: mkdir /home/{{ user }}
+  #   register: shell_result
+  # - name: Creating ssh directoy
+  #   shell: mkdir /home/{{ user }}/.ssh
+  #   register: shell_result
+  # - name: Copy id-rsa.pub
+  #   template: src=../configs.example/pub.keys/{{ user }} dest=/home/{{ user }}/.ssh/authorized_keys mode=0744
+  # - name: Changing own on user
+  #   shell: chown {{ user }}:{{ user }} -R /home/{{ user }}
+  #   register: shell_result
+...

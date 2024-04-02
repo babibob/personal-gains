@@ -1,0 +1,33 @@
+- name: Logstash | Copying input and filter configs
+  synchronize:
+    src: "{{ item.src }}"
+    dest: "{{ item.dest }}"
+    owner: "{{ item.owner }}"
+    group: "{{ item.group }}"
+    perms: "{{ item.perms }}"
+    mode: push
+  loop:
+    - { src: files/conf.d/, dest: /etc/logstash/conf.d, owner: no, group: no, perms: yes }
+
+- name: Logstash | Copying output configs
+  template:
+    src: 03-output.conf.j2
+    dest: /etc/logstash/conf.d/03-output.conf
+    owner: root
+    group: root
+    mode: '0644'
+
+- name: Elastic | Seting JVM Heap values
+  lineinfile:
+    dest: "{{ item.dest }}"
+    regexp: "{{ item.regexp }}"
+    line: "{{ item.line }}"
+  loop:
+    - { dest: /etc/logstash/jvm.options, regexp: "^-Xms", line: "-Xms{{ logstash_jvm_xms }}" }
+    - { dest: /etc/logstash/jvm.options, regexp: "^-Xmx", line: "-Xmx{{ logstash_jvm_xmx }}" }
+
+- name: Logstash | Restarting logstash
+  service:
+    name: logstash
+    state: restarted
+    enabled: yes

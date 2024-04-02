@@ -1,0 +1,1 @@
+0 0 * * * root bash /opt/scripts/backup.sh rpm && bash /opt/scripts/backup.sh etc && bash /opt/scripts/backup.sh copy 

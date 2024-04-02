@@ -1,0 +1,34 @@
+---
+- name: Check Observer Service
+  uri:
+    url: "{{ observer_link }}/{{ observer_status_link }}"
+    method: GET
+    headers:
+      Content-Type: text/plain
+    status_code: 200
+    return_content: true
+  register: check_observer
+
+- name: Check Observer Service
+  debug:
+    var: check_observer
+
+- name: Autostop k8s stand
+  uri:
+    url: "{{ observer_link }}/{{ k8s_ns_down }}"
+    method: POST
+    headers:
+      Content-Type: application/json
+    body: '{"stand":"{{ k8s_ns }}"}'
+    status_code: 200
+    body_format: json
+    return_content: true
+  failed_when:
+    - k8s_ns is not defined
+    - action_type is not defined
+  register: callback
+
+- name: Print Callback
+  debug:
+    var: callback
+...

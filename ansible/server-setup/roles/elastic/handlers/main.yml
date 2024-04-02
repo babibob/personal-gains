@@ -1,0 +1,14 @@
+---
+- name: Start Elasticsearch
+  systemd:
+    name: elasticsearch
+    state: started
+
+- name: Enable Elasticsearch
+  systemd:
+    name: elasticsearch
+    enabled: yes
+
+- name: Reload systemd
+  systemd:
+    daemon_reload: yes

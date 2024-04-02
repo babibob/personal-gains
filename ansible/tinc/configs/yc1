@@ -1,0 +1,4 @@
+Address =  84.201.150.197 655 
+Cipher = aes-128-cbc 
+Digest = sha1 
+Compression = 0

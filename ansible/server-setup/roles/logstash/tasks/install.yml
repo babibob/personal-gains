@@ -1,0 +1,15 @@
+- name: Logstash | Installing yandex-mirror elastic repo
+  copy:
+    src: elastic-8.x.list
+    dest: /etc/apt/sources.list.d/elastic-8.x.list
+    owner: root
+    group: root
+    mode: '0644'
+
+- name: Logstash | Installing logstash package
+  apt:
+    update_cache: yes
+    allow_unauthenticated: yes
+    pkg:
+    - logstash
+    - default-jre

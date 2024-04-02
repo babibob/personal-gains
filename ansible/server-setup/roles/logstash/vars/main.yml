@@ -1,0 +1,3 @@
+---
+logstash_jvm_xms: 3g
+logstash_jvm_xmx: 3g

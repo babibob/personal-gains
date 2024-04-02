@@ -1,0 +1,18 @@
+---
+- name: Import autostart
+  import_tasks: 'tasks/start_k8s_stand.yml'
+  when:
+    - (action_type == '1') and (k8s_ns is defined)
+- name: Import autostop
+  import_tasks: 'tasks/stop_k8s_stand.yml'
+  when:
+    - (action_type == '2') and (k8s_ns is defined)
+- name: Manual action start
+  import_tasks: 'tasks/man_start_k8s_stand.yml'
+  when:
+    - (action_type == '3') and (k8s_ns is defined)
+- name: Manual action stop
+  import_tasks: 'tasks/man_stop_k8s_stand.yml'
+  when:
+    - (action_type == '4') and (k8s_ns is defined)
+...

@@ -1,0 +1,67 @@
+---
+- name: Adding wazuh-agent repo
+  copy:
+    src: atomic.repo
+    dest: /etc/yum.repos.d/atomic.repo
+    owner: root
+    group: root
+    mode: "0644"
+
+- name: Ossec-agent | Install wazuh-agent
+  yum:
+    name: "{{ packages }}"
+    state: present
+  vars:
+    packages:
+      - ossec-hids-agent
+      - expect
+
+- name: Ossec-agent | Configure Manager address
+  replace:
+    path: /var/ossec/etc/ossec.conf
+    regexp: '10.66.6.211'
+    replace: '10.225.16.75'
+
+- name: Ossec-agent | Configure protocol
+  replace:
+    path: /var/ossec/etc/ossec.conf
+    regexp: 'tcp'
+    replace: 'udp'
+
+- name: Ossec-agent | Symlink for agents
+  file:
+    src: /var/ossec/bin/manage_agent
+    dest: /var/ossec/bin/manage_agents
+    owner: root
+    group: root
+    state: link
+
+- name: Ossec-agent | Create queue file
+  file:
+    path: /var/ossec/queue/rids/sender
+    state: touch
+    owner: root
+    group: root
+    mode: '0644'
+
+- name: Ossec-agent | Copying expect script
+  copy:
+    src: manage-agent-expect
+    dest: /var/ossec/bin/manage_agents_expect
+    owner: root
+    group: ossec
+    mode: '0755'
+
+- name: Ossec-agent | Configure keys
+  shell: /var/ossec/bin/manage_agents_expect
+  environment:
+    OSSEC_ACTION_CONFIRMED: Y
+    OSSEC_AGENT_KEY: "{{ host_key }}"
+    OSSEC_ACTION: I
+
+- name: Ossec-agent | Agent start
+  systemd:
+    name: ossec-hids
+    enabled: yes
+    masked: no
+    state: started

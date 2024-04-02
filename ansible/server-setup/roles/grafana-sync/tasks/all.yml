@@ -1,0 +1,19 @@
+---
+- name: Deploying entry dashboards
+  template:
+    src: telegraf_exporter_dashboard.json
+    dest: /var/lib/grafana/dashboards/per-server-metrics/{{ item }}.json
+    owner: grafana
+    group: grafana
+    mode: 0644
+  loop: "{{ query('inventory_hostnames', 'all' ) }}"
+  vars:
+    chat: pJsKGyhnkA
+
+- name: Deploying dadata dashboard
+  template:
+    src: dadata_exporter_dashboard.json
+    dest: /var/lib/grafana/dashboards/custom-dashboards/dadata_exporter_dashboard.json
+    owner: grafana
+    group: grafana
+    mode: 0644

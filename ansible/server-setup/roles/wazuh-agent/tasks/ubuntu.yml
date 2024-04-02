@@ -1,0 +1,62 @@
+---
+- name: Ossec-agent | Install apt-transport-https, ca-certificates, gnupg and acl
+  apt:
+    name:
+      - apt-transport-https
+      - ca-certificates
+      - acl
+      - gnupg
+      - expect
+
+- name: Ossec-agent | Installing Wazuh repository key
+  apt_key:
+    url: https://www.atomicorp.com/RPM-GPG-KEY.atomicorp.txt
+
+- name: Ossec-agent | Add Wazuh repositories
+  apt_repository:
+    filename: atomic.list
+    repo: "deb [trusted=yes] https://updates.atomicorp.com/channels/atomic/debian bullseye/amd64/"
+    state: present
+    update_cache: true
+
+- name: Ossec-agent | Install wazuh-agent
+  apt:
+    name: ossec-hids-agent
+    state: present
+    cache_valid_time: 3600
+
+- name: Ossec-agent | Configure Manager address
+  replace: 
+    path: /var/ossec/etc/ossec.conf
+    regexp: '192.168.10.100'
+    replace: '10.225.16.75'
+
+- name: Ossec-agent | Create queue file
+  file:
+    path: /var/ossec/queue/rids/sender
+    state: touch
+    owner: root
+    group: root
+    mode: '0644'
+
+- name: Ossec-agent | Copying expect script
+  copy:
+    src: manage-agent-expect
+    dest: /var/ossec/bin/manage_agents_expect
+    owner: root
+    group: ossec
+    mode: '0755'
+
+- name: Ossec-agent | Configure keys
+  shell: /var/ossec/bin/manage_agents_expect
+  environment:
+    OSSEC_ACTION_CONFIRMED: Y
+    OSSEC_AGENT_KEY: "{{ host_key }}"
+    OSSEC_ACTION: I
+
+- name: Ossec-agent | Agent start
+  systemd:
+    name: ossec
+    enabled: yes
+    masked: no
+    state: started

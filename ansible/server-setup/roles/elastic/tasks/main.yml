@@ -1,0 +1,63 @@
+---
+
+- name: Elastic | Pre-config, configuring nproc settings
+  copy:
+    src: 20-nproc.conf
+    dest: /etc/security/limits.d/20-nproc.conf
+    mode: 0644
+    owner: root
+
+- name: Elastic | Installing yandex-mirror elastic repo
+  copy:
+    src: elastic-8.x.list
+    dest: /etc/apt/sources.list.d/elastic-8.x.list
+    owner: root
+    group: root
+    mode: '0644'
+
+- name: Elastic | Installing elasticsearch package
+  apt:
+    update_cache: yes
+    allow_unauthenticated: yes
+    pkg:
+    - elasticsearch
+    - default-jre
+
+- name: Elastic | Copying elasticsearch systemd unit
+  copy:
+    src: "{{ item.src }}"
+    dest: "{{ item.dest }}"
+    owner: "{{ item.owner }}"
+    group: "{{ item.group }}"
+    mode: "{{ item.mode }}"
+  loop:
+    - { src: elasticsearch.service, dest: /lib/systemd/system/elasticsearch.service, owner: root, group: root, mode: '0644' }
+  notify:
+    - Reload systemd
+
+- name: Elastic | Copying elasticsearch configs
+  template:
+    src: elasticsearch.yml.j2
+    dest: /etc/{{ item.name }}/elasticsearch.yml
+    owner: root
+    group: elasticsearch
+    mode: 0644
+  with_items:
+    - "{{ running }}"
+
+- name: Elastic | Seting JVM Heap values
+  lineinfile:
+    dest: "{{ item.dest }}"
+    regexp: "{{ item.regexp }}"
+    line: "{{ item.line }}"
+  loop:
+    - { dest: /etc/elasticsearch/jvm.options, regexp: "^-Xms", line: "-Xms{{ elasticsearch_jvm_xms }}" }
+    - { dest: /etc/elasticsearch/jvm.options, regexp: "^-Xmx", line: "-Xmx{{ elasticsearch_jvm_xmx }}" }
+
+- name: Elastic | Ensure daemon is running
+  service:
+    name: "{{ item.name }}"
+    state: started
+    enabled: yes
+  with_items:
+    - "{{ running }}"

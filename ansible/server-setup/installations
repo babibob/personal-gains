@@ -1,0 +1,7 @@
+---
+-  name: Start playbook instalation
+   hosts: "{{ host }}"
+   become: true
+   ignore_errors: true
+   roles:
+    - role: installations

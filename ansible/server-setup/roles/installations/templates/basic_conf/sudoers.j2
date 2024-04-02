@@ -1,0 +1,20 @@
+#
+# This file MUST be edited with the 'visudo' command as root.
+#
+# Please consider adding local content in /etc/sudoers.d/ instead of
+# directly modifying this file.
+#
+# See the man page for details on how to write a sudoers file.
+#
+Defaults    env_reset
+Defaults    mail_badpass
+Defaults    secure_path="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
+
+root    ALL=(ALL:ALL) ALL
+#www-data ALL=(root) NOPASSWD: /bin/ls,/usr/bin/openssl,/usr/bin/scp,/usr/bin/md5sum,/bin/ln,/usr/sbin/nginx,/usr/bin/supervisorctl
+#zabbix ALL=(ALL) NOPASSWD: /usr/sbin/smartctl
+%sudo   ALL=(ALL:ALL) NOPASSWD:ALL
+#%web    ALL=(ALL) NOPASSWD:/bin/su www-data
+{% for user in username %}
+{{ user }} ALL=(ALL) NOPASSWD:ALL
+{% endfor %}

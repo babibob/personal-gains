@@ -1,0 +1,83 @@
+---
+- vars_prompt:
+  - name: host
+    prompt: new bacula client hostname (from infra file)
+    private: false
+  - name: dname
+    prompt: server name (for config file, without domain)
+    private: false
+  hosts: "{{ host }}"
+
+  become: true
+  tasks:
+
+  - name: Generate password
+    set_fact:
+      password: "{{ lookup('password', '/dev/null chars=ascii_lowercase,digits length=16') }}"
+
+  - name: install bacula
+    ansible.builtin.package:
+      name: bacula-client
+
+  - name: Copy configuration
+    copy:
+      src: configs/bacula-fd.conf
+      dest: /etc/bacula/bacula-fd.conf
+      mode: '0644'
+      owner: root
+      group: root
+    become: true
+
+  - name: replace config vars
+    replace:
+      path: /etc/bacula/bacula-fd.conf
+      regexp: "{{ item.regexp }}"
+      replace: "{{ item.replace }}"
+    loop:
+    - { regexp: DNAME, replace: "{{ ansible_hostname }}.{{ zone }}" }
+    - { regexp: TINCADDR, replace: "{{ ansible_facts.tap0.ipv4.address }}" }
+    - { regexp: PASSWORD, replace: "{{ password }}" }
+
+    - name: restart bacula
+      systemd:
+        state: restarted
+        name: bacula-fd
+
+    - name: copy configuration to bacula-director
+      copy:
+        src: configs/bacula-client.conf
+        dest: "/etc/bacula/clients/{{ ansible_hostname }}.conf"
+        mode: '0644'
+        owner: root
+        group: root
+      delegate_to: <BACULA-DIRECTOR-FROM-INVENTORY>
+
+    - name: set configuration
+      template:
+        dest: "/etc/bacula/clients/{{ ansible_hostname }}.conf"
+      delegate_to: <BACULA-DIRECTOR-FROM-INVENTORY>
+
+    - name: replace config vars
+      replace:
+        path: "/etc/bacula/clients/{{ ansible_hostname }}.conf"
+        regexp: "{{ item.regexp }}"
+        replace: "{{ item.replace }}"
+      loop:
+      - { regexp: DNAME, replace: "{{ ansible_hostname }}.{{ zone }}" }
+      - { regexp: TINCADDR, replace: "{{ ansible_facts.tap0.ipv4.address }}" }
+      - { regexp: PASSWORD, replace: "{{ password }}" }
+      delegate_to: <BACULA-DIRECTOR-FROM-INVENTORY>
+
+    - name: Add client to cliens.list on bacula-director
+      lineinfile:
+        path: /etc/bacula/clients/client.list
+        line: "@/etc/bacula/clients/{{ ansible_hostname }}.conf"
+        state: present
+      delegate_to: <BACULA-DIRECTOR-FROM-INVENTORY>
+
+    - name: reload bacula-director service
+      systemd:
+        state: reloaded
+        name: bacula-director
+      delegate_to: <BACULA-DIRECTOR-FROM-INVENTORY>
+...

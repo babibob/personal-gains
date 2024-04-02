@@ -1,0 +1,101 @@
+---
+- name: Generate password
+  set_fact:
+    password: "{{ lookup('password', '/dev/null chars=ascii_lowercase,digits length=16') }}"
+- name: install bacula
+  ansible.builtin.package:
+    name: bacula-client
+- name: Create directory for backup
+  file:
+    path: /tmp/bacula-restore
+    state: directory
+- name: Copy configuration
+  copy:
+    src: baculaconf/bacula-fd.conf
+    dest: /etc/bacula/bacula-fd.conf
+    mode: '0644'
+    owner: root
+    group: root
+  become: true
+- name: replace config vars
+  replace:
+    path: /etc/bacula/bacula-fd.conf
+    regexp: "{{ item.regexp }}"
+    replace: "{{ item.replace }}"
+  loop:
+  - { regexp: DNAME, replace: "{{ ansible_hostname }}.{{ zone }}" }
+  - { regexp: TINCADDR, replace: "{{ ansible_facts.tap0.ipv4.address }}" }
+  - { regexp: PASSWORD, replace: "{{ password }}" }
+- name: restart bacula
+  systemd:
+    state: restarted
+    name: bacula-fd
+- name: copy configuration to bacula-dir
+  copy:
+    src: baculaconf/bacula-client.conf
+    dest: "/etc/bacula/clients/{{ ansible_hostname }}.{{ zone }}.conf"
+    mode: '0644'
+    owner: root
+    group: root
+  delegate_to: bacula-dir
+- name: replace config vars
+  replace:
+    path: "/etc/bacula/clients/{{ ansible_hostname }}.{{ zone }}.conf"
+    regexp: "{{ item.regexp }}"
+    replace: "{{ item.replace }}"
+  loop:
+  - { regexp: DNAME, replace: "{{ ansible_hostname }}.{{ zone }}" }
+  - { regexp: TINCADDR, replace: "{{ ansible_facts.tap0.ipv4.address }}" }
+  - { regexp: PASSWORD, replace: "{{ password }}" }
+  delegate_to: bacula-dir
+- name: Add client to cliens.list on bacula-dir
+  lineinfile:
+    path: /etc/bacula/clients/client.list
+    line: "@/etc/bacula/clients/{{ ansible_hostname }}.{{ zone }}.conf"
+    state: present
+  delegate_to: bacula-dir
+- name: reload bacula-dir service
+  systemd:
+    state: reloaded
+    name: bacula-director
+  delegate_to: bacula-dir
+# ---
+# - name: install bacula Debian
+#   apt:
+#     name: bacula-fd
+#     update_cache: true
+#   when: ansible_os_family == "Debian"
+# - name: install bacula RedHat
+#   yum:
+#     name:
+#     - bacula-client
+#     - bacula-libs
+#     update_cache: true
+#   when: ansible_os_family == "RedHat"
+# - name: copy configuration
+#   copy:
+#     src: configs.example/bacula-fd.conf
+#     dest: /etc/bacula/bacula-fd.conf
+#     mode: '0644'
+#     owner: root
+#     group: root
+#   become: true
+#   tags: copy_skel
+# - name: set configuration
+#   shell: "sed -i 's/DNAME/{{dname}}/' /etc/bacula/bacula-fd.conf && sed -i 's/PASSWORD/{{password}}/' /etc/bacula/bacula-fd.conf"
+#   register: shell_result
+# - name: Create folders
+# #   shell: "mkdir /var/lib/bacula && mkdir var/run/bacula"
+# #   register: shell_result
+# #   when: ansible_os_family == "RedHat"
+#   file:
+#     path: "{{ item }}"
+#     state: directory
+#   loop:
+#     - /var/lib/bacula
+#     - /var/run/bacula
+# - name: Restart bacula service
+#   systemd:
+#     name: bacula-fd
+#     state: restarted
+...

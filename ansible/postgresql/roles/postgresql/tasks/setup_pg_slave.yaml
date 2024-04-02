@@ -1,0 +1,39 @@
+---
+
+- name: Creates directory
+  file:
+    path: "{{ default_psql_path }}"
+    state: directory
+
+- name: Creates directory
+  file:
+    path: "{{ default_psql_data_path }}"
+    state: directory
+
+- name: copy Docker Compose files
+  template:
+    src: docker-compose.yml.j2
+    dest: "{{ default_psql_path }}/docker-compose.yml"
+
+- name: Deploy Docker compose stack
+  shell: cd "{{ default_psql_path }}" && docker-compose up -d
+
+- name: Check container
+  wait_for:
+    host: "{{ ansible_default_ipv4.address }}"
+    port: 5432
+
+- name: Delete unused data
+  become: true
+#  shell: docker exec -it {{ ansible_facts['hostname'] }} bash -c "rm -rf /var/lib/postgresql/*"
+  shell: rm -rf {{ default_psql_data_path }}/*
+
+- name: Create .pgpass file
+  shell: docker exec -it --user postgres {{ ansible_facts['hostname'] }} bash -c "echo '{{ master_address }}:5432:*:repluser:{{ default_psql_repl_pass }}' > ~/.pgpass"
+
+- name: Chmod .pgpass file
+  shell: docker exec -it --user postgres {{ ansible_facts['hostname'] }} bash -c "chmod 0600 ~/.pgpass"
+
+- name: Backup initial data from master
+  shell: echo "pg_basebackup --host='{{ master_address }}' --username=repluser --pgdata=/var/lib/postgresql/data --wal-method=stream --write-recovery-conf" | docker exec -i --user postgres {{ ansible_facts['hostname'] }} bash
+...

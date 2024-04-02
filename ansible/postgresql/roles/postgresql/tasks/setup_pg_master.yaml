@@ -1,0 +1,42 @@
+---
+
+- name: Creates directory
+  file:
+    path: "{{ default_psql_path }}"
+    state: directory
+
+- name: Creates directory
+  file:
+    path: "{{ default_psql_data_path }}"
+    state: directory
+
+- name: copy Docker Compose files
+  template:
+    src: docker-compose.yml.j2
+    dest: "{{ default_psql_path }}/docker-compose.yml"
+
+- name: Deploy Docker compose stack
+  shell: cd "{{ default_psql_path }}" && docker-compose up -d
+
+- name: Check container
+  wait_for:
+    host: "{{ ansible_default_ipv4.address }}"
+    port: 5432
+
+- name: Create Replication User
+#  shell: echo "CREATE ROLE repluser PASSWORD '{{ default_psql_repl_pass }}' NOSUPERUSER NOCREATEDB NOCREATEROLE INHERIT LOGIN REPLICATION;" | docker exec -d {{ ansible_facts['hostname'] }} bash -c 'psql -h 127.0.0.1 -p 5432 -U postgres postgres'
+  shell: echo "CREATE ROLE repluser PASSWORD '{{ default_psql_repl_pass }}' NOSUPERUSER NOCREATEDB NOCREATEROLE INHERIT LOGIN REPLICATION;" | docker exec -i --user postgres {{ ansible_facts['hostname'] }} bash -c 'psql'
+
+- name: copy postgresql.conf
+  template:
+    src: postgresql.conf.j2
+    dest: "{{ default_psql_data_path }}/postgresql.conf"
+
+- name: copy pg_hba.conf
+  template:
+    src: pg_hba.conf.j2
+    dest: "{{ default_psql_data_path }}/pg_hba.conf"
+
+- name: restart
+  shell: docker restart {{ ansible_facts['hostname'] }}
+...

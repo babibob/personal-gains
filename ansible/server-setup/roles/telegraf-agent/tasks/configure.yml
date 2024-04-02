@@ -1,0 +1,13 @@
+---
+- name: Copying configs
+  synchronize:
+    src: "{{ item.src }}"
+    dest: "{{ item.dest }}"
+    owner: "{{ item.owner }}"
+    group: "{{ item.group }}"
+    perms: "{{ item.perms }}"
+    mode: push
+  loop:
+    - { src: files/telegraf.conf, dest: /etc/telegraf/telegraf.conf, owner: no, group: no, perms: yes }
+    - { src: files/prometheus.conf, dest: /etc/telegraf/telegraf.d/prometheus.conf, owner: no, group: no, perms: yes }
+  notify: telegraf restart

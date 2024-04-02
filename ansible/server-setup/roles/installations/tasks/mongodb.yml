@@ -1,0 +1,35 @@
+---
+- name: Preparation soft
+  apt:
+    name: gnupg
+    update_cache: true
+- name: Add apt-key
+  apt_key:
+    url: https://www.mongodb.org/static/pgp/server-5.0.asc
+    state: present
+- name: Add apt repository for stable version
+  apt_repository:
+    repo: 'deb http://repo.mongodb.org/apt/{{ ansible_os_family |lower }} buster/mongodb-org/5.0 main'
+    state: present
+- name: "Update apt cache"
+  apt:
+    update_cache: true
+    cache_valid_time: 300
+- name: Install MongoDB Packages (Specific version)
+  ansible.builtin.package:
+    name:
+    - "mongodb-org-server={{ specific_mongodb_version }}"
+    - "mongodb-org-shell={{ specific_mongodb_version }}"
+    - "mongodb-org-mongos={{ specific_mongodb_version }}"
+    - "mongodb-org-tools={{ specific_mongodb_version }}"
+  when:
+    - specific_mongodb_version is defined
+  register: _pkg
+  until: _pkg is succeeded
+  retries: 5
+- name: Enable mongodb
+  service:
+    name: mongod
+    enabled: true
+    state: started
+...

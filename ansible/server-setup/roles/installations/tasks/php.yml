@@ -1,0 +1,37 @@
+---
+- name: Install gpg && apt-transport-https && software-properties-common && dirmngr
+  apt:
+    name:
+    - gpg
+    - apt-transport-https
+    - software-properties-common
+    - dirmngr
+- name: Install pub keyserver
+  apt_key:
+    keyserver: keyserver.ubuntu.com
+    id: 'B188E2B695BD4743'
+- name: Add repository
+  apt_repository:
+    repo: deb https://packages.sury.org/php/ {{ ansible_distribution_release }} main
+    state: present
+    filename: php{{version}}
+    update_cache: false
+- name: Install php{{version}}
+  apt:
+    name:
+    - php{{version}}-fpm
+    - php{{version}}-curl
+    - php{{version}}-mysql
+    - php{{version}}-opcache
+    - php{{version}}-xml
+    - php{{version}}-mbstring
+    - php{{version}}-common
+    - php{{version}}-json
+    - php{{version}}-readline
+    - php{{version}}-zip
+    - php{{version}}-intl
+    - php{{version}}-gd
+    - php{{version}}
+    update_cache: true
+    state: latest
+...

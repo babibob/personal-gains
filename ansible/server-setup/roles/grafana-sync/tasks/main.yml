@@ -1,0 +1,4 @@
+---
+
+- include: provisioning.yml
+- include: all.yml

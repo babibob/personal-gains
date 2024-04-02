@@ -1,0 +1,19 @@
+---
+- name: DELETE sudo user
+  vars_prompt:
+    - name: host
+      prompt: HOSTANME = where create sudo user (from infra file)
+      private: false
+    - name: user
+      prompt: USERNAME
+      private: false
+  hosts: "{{ host }}"
+  become: true
+  tasks:
+  - name: Delete user to group example
+    user:
+      name:  "{{ user }}"
+      state: absent
+      remove: yes
+      force: yes
+...

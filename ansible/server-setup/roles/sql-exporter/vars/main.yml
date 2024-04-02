@@ -1,0 +1,10 @@
+---
+monitoring_queues:
+  - webapi.analytics
+  - webapi.metrics
+  - osago
+  - kasko
+  - analytics-service-events
+  - sms-notifications
+  - webapi.crm
+ids: " ABCDEFGHIGJKLMNPQRSTUVWXYZ"

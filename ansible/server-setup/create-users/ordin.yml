@@ -1,0 +1,18 @@
+---
+- hosts: "{{ host }}"
+  ignore_errors: true
+  become: true
+  tasks:
+  - name: Creating new user
+    user:
+      name: "{{ user }}"
+#     group: "{{user}}"
+#     password: '*'
+      shell: /bin/bash
+      home: /home/{{user}}
+
+  - name: Copy id-rsa.pub
+    authorized_key:
+      user: "{{ user }}"
+      key: "{{ lookup('file', '../configs.example/pub.keys/{{ user }}') }}"
+...

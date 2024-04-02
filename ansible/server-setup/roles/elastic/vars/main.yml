@@ -1,0 +1,10 @@
+---
+  elasticsearch_jvm_xms: 32g
+  elasticsearch_jvm_xmx: 32g
+  systemd_path: /usr/lib/systemd/system/
+  logs_path: /var/log/elasticsearch
+  data_path: /var/lib/elasticsearch
+  running:
+    - name: elasticsearch
+      zen_port: 9300
+      http_port: 9200

@@ -1,0 +1,50 @@
+---
+- name: Install gpg && apt-transport-https && software-properties-common && dirmngr
+  apt:
+    name:
+    - gpg
+    - apt-transport-https
+    - software-properties-common
+    - dirmngr
+- name: Add apt-key
+  apt_key:
+    url: https://ftp-master.debian.org/keys/archive-key-6.0.asc
+    state: present
+- name: Install pub keyserver
+  apt_key:
+    keyserver: keyserver.ubuntu.com
+    id: 'ABF5BD827BD9BF62'
+- name: Add repository
+  apt_repository:
+    repo: deb https://nginx.org/packages/mainline/debian/ {{ ansible_distribution_release }} nginx
+    state: present
+    filename: nginx
+    update_cache: false
+- name: Remove previous nginx
+  apt:
+    name: nginx-common
+    state: absent
+    autoremove: true
+- name: Install nginx
+  apt:
+    name: nginx
+    update_cache: true
+    state: latest
+- name: Place a config
+  copy:
+    src: configs.example/nginx/nginx.conf
+    dest: /etc/nginx/nginx.conf
+    mode: '0775'
+- name: Systemd check
+  systemd:
+    enabled: true
+    name: nginx
+    masked: false
+    daemon_reload: true
+    state: restarted
+### nginx vim syntax highlighting
+# mkdir -p ~/.vim/pack/plugins/start
+# cd ~/.vim/pack/plugins/start
+# git clone https://github.com/chr4/nginx.vim.git
+###
+...

@@ -1,0 +1,155 @@
+---
+- hosts: "{{ host }}"
+  become: true
+  ignore_errors: true
+      #   vars:
+      #       tinc_hostname: tolik  # name of config
+      #       real_ip: 3.2.2.3  # white real_ip
+      #       local: 17         # last oktet of local real_ip
+  vars:
+    mac: "{{ '00' | community.general.random_mac }}"
+    tinc_routes: "{{ lookup('file', 'configs/network') }}"
+  vars_prompt:
+  - name: host
+    prompt: hostname from inventory
+    private: false
+  - name: tinc_hostname
+    prompt: new tinc client hostname (without '-')
+    private: false
+  - name: real_ip
+    prompt: Real ip address from host
+    private: false
+  - name: local
+    prompt: last octet for tinc l2vpnnet
+    private: false
+
+  tasks:
+  - name: RedHat install prepare
+    yum:
+      name: epel-release
+      update_cache: true
+      state: present
+    when: ansible_facts['os_family'] == "RedHat"
+
+  - name: install tinc
+    ansible.builtin.package:
+      name:
+      - tinc
+      - bridge-utils
+
+  - name: Clear directories
+    file:
+      path: /etc/tinc/l2vpnnet
+      state: absent
+
+  - name: Create directories
+    file:
+      path: /etc/tinc/l2vpnnet/hosts
+      state: directory
+
+  - name: Generate an OpenSSH keypair (4096 bits, rsa)
+    shell: tincd -n l2vpnnet -K4096
+    register: shell_result
+
+  - name: Copy configuration both os_family
+    copy:
+      src: "{{ item.src }}"
+      dest: "{{ item.dest }}"
+      owner: root
+      group: root
+      mode: '0644'
+    loop:
+      - {src: 'configs/<ENTRY_SERVER_NAME>', dest: '/etc/tinc/l2vpnnet/<ENTRY_SERVER_NAME>'}
+      - {src: 'configs/hosts/<ENTRY_SERVER_NAME>', dest: '/etc/tinc/l2vpnnet/hosts/<ENTRY_SERVER_NAME>'}
+      - {src: 'configs/tinc.conf', dest: '/etc/tinc/l2vpnnet/tinc.conf' }
+      - {src: 'configs/config', dest: '/etc/tinc/l2vpnnet/{{ tinc_hostname }}'}
+
+  - name: Copy interf configuration for Debian
+    copy:
+      src: configs/network
+      dest: /etc/network/interfaces.d/tinc.network
+      owner: root
+      group: root
+      mode: '0644'
+    when: ansible_facts['os_family'] == "Debian"
+
+  - name: Copy interf configuration for RedHat
+    copy:
+      src: "{{ item.src }}"
+      dest: "{{ item.dest }}"
+      owner: root
+      group: root
+      mode: '0744'
+    loop:
+      - {src: 'configs/tinc-up', dest: '/etc/tinc/l2vpnnet/tinc-up'}
+      - {src: 'configs/tinc-down', dest: '/etc/tinc/l2vpnnet/tinc-down'}
+    when: ansible_facts['os_family'] == "RedHat"
+  # for centos add tinc-up tinc-down и замена айпишника назначающегося в файле 744
+  - name: Set real_ip and set keys Debian
+    shell: |-
+      echo Address = {{ real_ip }} > /etc/tinc/l2vpnnet/hosts/{{ tinc_hostname }} ;
+      cat /etc/tinc/l2vpnnet/rsa_key.pub >> /etc/tinc/l2vpnnet/hosts/{{ tinc_hostname }} ;
+      rm /root/id_rsa.pub ;
+      sed -i 's/NAME/{{ tinc_hostname }}/' /etc/tinc/l2vpnnet/tinc.conf ;
+      sed -i 's/REALIP/{{ real_ip }}/' /etc/tinc/l2vpnnet/{{ tinc_hostname }} ;
+      sed -i 's/IPTINC/{{ local }}/' /etc/network/interfaces.d/tinc.network ;
+      sed -i 's/RANDOMMAC/{{ mac }}/' /etc/network/interfaces.d/tinc.network
+    register: shell_result
+    when: ansible_facts['os_family'] == "Debian"
+
+  - name: Set real_ip and set keys RedHat
+    shell: |-
+      echo Address = {{ real_ip }} > /etc/tinc/l2vpnnet/hosts/{{ tinc_hostname }} ;
+      cat /etc/tinc/l2vpnnet/rsa_key.pub >> /etc/tinc/l2vpnnet/hosts/{{ tinc_hostname }} ;
+      rm /root/id_rsa.pub ;
+      sed -i 's/NAME/{{ tinc_hostname }}/' /etc/tinc/l2vpnnet/tinc.conf ;
+      sed -i 's/REALIP/{{ real_ip }}/' /etc/tinc/l2vpnnet/{{ tinc_hostname }} ;
+      sed -i 's/IPTINC/{{ local }}/' /etc/tinc/l2vpnnet/tinc-up ;
+      sed -i 's/RANDOMMAC/{{ mac }}/' /etc/tinc/l2vpnnet/tinc-up
+      sed -i 's/IPTINC/{{ local }}/' /etc/tinc/l2vpnnet/tinc-down
+    register: shell_result
+    when: ansible_facts['os_family'] == "RedHat"
+
+  # Send config
+  - name: get config
+    shell: "cat /etc/tinc/l2vpnnet/{{ tinc_hostname }}"
+    register: shell_result
+
+  - name: register config
+    set_fact:
+      config: "{{shell_result.stdout}}"
+
+  # Send pubkey
+  - name: get pubkey
+    shell: "cat /etc/tinc/l2vpnnet/hosts/{{ tinc_hostname }}"
+    register: shell_result
+
+  - name: register pubkey
+    set_fact:
+      pubkey: "{{shell_result.stdout}}"
+
+  - name: deliver pubkey and config
+    shell: |-
+      echo "{{ config }}" > /etc/tinc/l2vpnnet/{{ tinc_hostname }} ;
+      echo "{{ pubkey }}" > /etc/tinc/l2vpnnet/hosts/{{ tinc_hostname }}
+    delegate_to: "{{ item }}"
+    loop: [<LIST_OF_ENTRY_SERVERS>]
+
+  # Restart tinc
+  - name: systemd restart tinc
+    service:
+      name: tinc
+      state: restarted
+
+  - name: start service for RedHat
+    service:
+      name: tinc@l2vpnnet
+      state: started
+      enabled: true
+    when: ansible_facts['os_family'] == "RedHat"
+
+  - name: start interfaces for Debian
+    shell: ifup tap0
+    register: shell_result
+    when: ansible_facts['os_family'] == "Debian"
+...

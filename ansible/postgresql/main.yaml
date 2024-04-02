@@ -1,0 +1,17 @@
+---
+- name: Start playbook instalation
+  hosts: "{{ group }}"
+  become: true
+  gather_facts: true
+  vars:
+    default_psql_repl_pass: "{{ lookup('password', '/dev/null chars=ascii_lowercase,digits length=16') }}"
+    default_psql_psql_pass: "{{ lookup('password', '/dev/null chars=ascii_lowercase,digits length=16') }}"
+    default_psql_data_path: /opt/postgresql/data
+    default_psql_path: /opt/postgresql
+  roles:
+    - role: postgresql
+  vars_prompt:
+    - name: group
+      prompt: "Please enter Group"
+      private: false
+...

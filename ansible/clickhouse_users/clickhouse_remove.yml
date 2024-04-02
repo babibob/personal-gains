@@ -1,0 +1,17 @@
+---
+- hosts: clickhouse01
+  ignore_errors: true
+  vars_prompt:
+  - name: username
+    prompt: enter username (!!!without '.')
+    private: false
+  become: false
+  tasks:
+  - name: Set username
+    shell: "rm /etc/clickhouse-server/users.d/{{ username }}.xml"
+    become: true
+    delegate_to: "{{ item }}"
+    with_items:
+      - clickhouse01
+      - clickhouse02
+...

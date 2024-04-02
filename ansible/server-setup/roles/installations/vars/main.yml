@@ -1,0 +1,33 @@
+---
+    # vars file for installations
+minimal: '0'
+
+nginx: '0'
+percona: '0'
+php: '0'
+version: '7.3'
+beats: '0'
+nftables: '0'
+bacula: '0'
+redis: '0'
+mongodb: '0'
+clickhouse: '0'
+docker: '0'
+    # stage vars
+specific_mongodb_version: '5.0.1'
+clickhouse_supported: true
+clickhouse_repo: "deb https://repo.clickhouse.tech/deb/stable/ main/"
+clickhouse_repo_keyserver: keyserver.ubuntu.com
+clickhouse_repo_key: E0C56BD4
+zone: maf.io
+docker_compose_version: v2.2.2
+    # packages
+all_packege: [rsync, rsyslog, openssh-server, nano, netcat, vim, sudo, curl, mc, net-tools, htop, nftables, tree, bridge-utils]
+apt_packages: "{{ all_packege + ['inetutils-ping'] + ['mailutils'] + ['prometheus-node-exporter'] }}"
+yum_packages: "{{ all_packege + [' iputils, mailx'] + ['golang-github-prometheus-node-exporter'] + ['epel-release']}}"
+    #Users
+username: [i.marin, kali, neorim]
+tempalate_files: [.bashrc, .profile, .vimrc]
+#kali - M.Malimon security
+#neorim - R.Maltsev  devops
+...

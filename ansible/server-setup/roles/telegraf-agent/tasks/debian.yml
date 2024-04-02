@@ -1,0 +1,46 @@
+---
+  - name: Install transport packages"
+    apt:
+      name: "apt-transport-https"
+      state: present
+
+  - name: Download telegraf apt key
+    apt_key:
+      url: "https://repos.influxdata.com/influxdb.key"
+      id: 2582E0C5
+      state: present
+
+  - name: Add telegraf repo
+    apt_repository:
+      repo: "deb https://repos.influxdata.com/{{ ansible_distribution|lower }} {{ ansible_lsb.codename }} stable"
+      filename: "telegraf"
+      state: present
+
+  - name: Install telegraf agent
+    apt:
+      name: "{{ packages }}"
+      state: present
+    vars:
+      packages:
+        - telegraf
+
+  - name: Copying configs
+    synchronize:
+      src: "{{ item.src }}"
+      dest: "{{ item.dest }}"
+      owner: "{{ item.owner }}"
+      group: "{{ item.group }}"
+      perms: "{{ item.perms }}"
+      mode: push
+    with_items:
+      - { src: files/telegraf.conf, dest: /etc/telegraf/telegraf.conf, owner: no, group: no, perms: yes }
+      - { src: files/prometheus.conf, dest: /etc/telegraf/telegraf.d/prometheus.conf, owner: no, group: no, perms: yes }
+    notify: telegraf restart
+    tags: update
+
+  - name: Starting Telegraf agent
+    service:
+      name: telegraf
+      state: started
+      enabled: yes
+    tags: update

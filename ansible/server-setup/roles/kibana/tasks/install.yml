@@ -1,0 +1,29 @@
+- name: Kibana | Installing yandex-mirror elastic repo
+  copy:
+    src: elastic-8.x.list
+    dest: /etc/apt/sources.list.d/elastic-8.x.list
+    owner: root
+    group: root
+    mode: '0644'
+
+- name: Kibana | Installing kibana package
+  apt:
+    update_cache: yes
+    allow_unauthenticated: yes
+    pkg:
+    - kibana
+    - default-jre
+
+- name: Kibana | Copying kibana config
+  template:
+    src: kibana.yml.j2
+    dest: /etc/kibana/kibana.yml
+    owner: root
+    group: root
+    mode: '0644'
+
+- name: Kibana | Restarting kibana
+  service:
+    name: kibana
+    state: restarted
+    enabled: yes

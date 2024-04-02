@@ -1,0 +1,18 @@
+# elasticsearch.yml
+
+bootstrap.memory_lock: false
+cluster.name: {{ item.name }}
+discovery.seed_hosts: [ {% for hosts in groups['elks'] -%}'{{ hostvars[hosts].ansible_ssh_host }}:{{ item.zen_port }}'{% if not loop.last %},{% endif %}{%- endfor %} ]
+cluster.initial_master_nodes: [ {% for hosts in groups['elks'] -%}'{{ hostvars[hosts].ansible_ssh_host }}:{{ item.zen_port }}'{% if not loop.last %},{% endif %}{%- endfor %} ]
+http.port: {{ item.http_port }}
+network.host: {{ ansible_tap0.ipv4.address }}
+node.roles: [ master, data ]
+node.name: {{ inventory_hostname }}
+path.data: {{ data_path }}/{{ item.name }}
+path.logs: {{ logs_path }}
+path.repo: {{ data_path }}
+transport.port: {{ item.zen_port }}
+network.publish_host: {{ ansible_host }}
+xpack.security.http.ssl.enabled: false
+xpack.security.enabled: false
+xpack.security.transport.ssl.enabled: false

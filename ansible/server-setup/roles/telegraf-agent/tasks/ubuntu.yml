@@ -1,0 +1,26 @@
+---
+- name: Telegraf-agent | Install transport packages"
+  apt:
+    name: "apt-transport-https"
+    state: present
+
+- name: Telegraf-agent | Download telegraf apt key
+  apt_key:
+    url: "https://repos.influxdata.com/influxdb.key"
+    id: 2582E0C5
+    state: present
+    validate_certs: no
+
+- name: Telegraf-agent | Add telegraf repo
+  apt_repository:
+    repo: "deb https://repos.influxdata.com/{{ ansible_distribution|lower }} {{ ansible_lsb.codename }} stable"
+    filename: "telegraf"
+    state: present
+
+- name: Telegraf-agent | Install telegraf agent
+  apt:
+    name: "{{ packages }}"
+    state: present
+  vars:
+    packages:
+      - telegraf

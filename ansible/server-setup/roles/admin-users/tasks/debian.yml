@@ -1,0 +1,39 @@
+---
+
+  - name: Add admin users
+    set_fact:
+      admingroups: sudo
+
+  - name: Creating user accounts
+    user:
+      name: "{{ item }}"
+      shell: /bin/bash
+      groups: "{{ admingroups }}"
+    with_items: "{{ adminlist }}"
+
+  - name: Installing keys
+    authorized_key:
+      user: "{{ item }}"
+      key: "{{ lookup('file', '../files/present/' + item + '.pub')}}"
+    with_items: "{{ adminlist }}"
+
+  - name: Enabling sudo without password
+    lineinfile: "dest=/etc/sudoers line='%{{ admingroups }}  ALL=(ALL)   NOPASSWD: ALL' regexp='^#?%{{ admingroups }}' backup=yes"
+
+  - name: Installing default env to /etc/profile.d/bash_colored.sh
+    template:
+      src: bash_colored.sh
+      dest: /etc/profile.d/bash_colored.sh
+      owner: root
+      group: root
+      mode: 0555
+
+  - name: Removing deprecated admin accounts
+    user:
+      name: "{{ item }}"
+      state: absent
+      remove: yes
+    with_items: "{{ adminremove }}"
+    tags:
+      - adminacct
+      - adminremove

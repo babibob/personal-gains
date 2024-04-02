@@ -1,0 +1,4 @@
+Address =  130.193.41.139 655 
+Cipher = aes-128-cbc 
+Digest = sha1 
+Compression = 0

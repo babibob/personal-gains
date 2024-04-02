@@ -1,0 +1,41 @@
+---
+# (do not put quotes on key id, for some reason it won't work)
+- name: "Obtaining percona public key"
+  apt_key:
+    keyserver: "keyserver.ubuntu.com"
+    id: 9334A25F8507EFA5
+- name: "Adding percona repository"
+  apt_repository:
+    repo: "deb http://repo.percona.com/apt {{ ansible_distribution_release }} main"
+    state: "present"
+- name: "Update apt cache"
+  apt:
+    update_cache: true
+    cache_valid_time: 300
+    deb: "https://repo.percona.com/apt/percona-release_latest.{{ ansible_distribution_release }}_all.deb"
+# https://www.percona.com/doc/percona-server/LATEST/installation/apt_repo.html
+- name: "Enable Percona repository (Percona version >= 8)"
+  command: "percona-release setup ps80"
+- name: "Install package dependencies for ansible MySQL modules (python 3)"
+  apt:
+    name: "python3-mysqldb"
+- name: "Install | configure debconf for version 8.0 (Use Legacy Authentication Method)"
+  debconf:
+    name: 'percona-server-server'
+    question: 'percona-server-server/default-auth-override'
+    value: 'Use Legacy Authentication Method (Retain MySQL 5.x Compatibility)'
+    vtype: select
+  changed_when: false
+- name: "Remove percona-release"
+  apt:
+    name: percona-release
+    state: absent
+- name: "Install percona packages and dependencies on Ubuntu (Percona version >= 8)"
+  apt:
+    name:
+      - "percona-server-server=8.0*"
+      - "percona-server-client=8.0*"
+      - "percona-toolkit"
+      - "percona-xtrabackup-80"
+    state: "present"
+...

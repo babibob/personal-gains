@@ -1,0 +1,31 @@
+---
+- hosts: "{{ host }}"
+  become: true
+  ignore_errors: true
+  vars_prompt:
+  - name: host
+    prompt: host/group from inventori (for example 'entry' group)
+    private: false
+  # - name: filename
+  #   prompt: filename for copy
+  #   private: false
+  tasks:
+  - name: add tinc entry hosts
+    copy:
+      src: 'configs/hosts/{{ item }}'
+      dest: '/etc/tinc/l2vpnnet/hosts/{{ item }}'
+    loop: [<LIST_OF_ENTRY_SERVERS>]
+
+  - name: add tinc entry
+    copy:
+      src: 'configs/{{ item }}'
+      dest: '/etc/tinc/l2vpnnet/{{ item }}'
+    loop: [<LIST_OF_ENTRY_SERVERS>]
+
+  - name: Add entry hosts to tinc onfig
+    lineinfile:
+      path: /etc/tinc/l2vpnnet/tinc.conf
+      line: "ConnectTo = {{ item }}"
+      state: present
+    loop: [<LIST_OF_ENTRY_SERVERS>]
+...

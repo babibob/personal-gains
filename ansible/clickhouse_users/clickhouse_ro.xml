@@ -1,0 +1,19 @@
+<yandex>
+    <users>
+    <USERNAME>
+	    <password_sha256_hex>USER_PASSWORD</password_sha256_hex>
+        <networks>
+            <ip>::/0</ip>
+        </networks>
+        <profiles>
+          <readonly>
+            <readonly>1</readonly>
+          </readonly>
+        </profiles>
+        <quota>default</quota>
+        <allow_databases>
+            <database>analytics</database>
+        </allow_databases>
+    </USERNAME>
+    </users>
+</yandex>

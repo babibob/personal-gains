@@ -1,0 +1,19 @@
+---
+- hosts: <BACULA-DIRECTOR-FROM-INVENTORY>
+  become: true
+  ignore_errors: true
+  tasks:
+
+  - name: remove from list
+    shell: "cat /etc/bacula/clients/client.list | grep -v {{dname}}.conf > /usr/local/etc/temp && cat /usr/local/etc/temp > /etc/bacula/clients/client.list "
+    register: shell_result
+
+  - name: remove config
+    shell: "rm /etc/bacula/clients/{{ dname }}.conf"
+    register: shell_result
+
+  - name: reload bacula-dir service
+    systemd:
+      state: reloaded
+      name: bacula-director
+...
