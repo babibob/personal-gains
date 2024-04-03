@@ -1,0 +1,5 @@
+---
+- name: set fact
+  set_fact:
+    etcd_address: "{{ etcd_address }}"
+...

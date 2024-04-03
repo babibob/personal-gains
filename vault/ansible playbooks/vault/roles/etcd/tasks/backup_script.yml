@@ -1,0 +1,26 @@
+---
+- name: Backup | Create etcd backup config file
+  template:
+    src: etcd-backup.conf.j2
+    dest: "{{ etcd_bin_dir }}/etcd-backup.conf"
+    mode: "0640"
+    owner: "{{ etcd_user }}"
+    group: "{{ etcd_group }}"
+
+- name: Backup | Create etcd backup script file
+  copy:
+    src: etcd-backup.sh
+    dest: "{{ etcd_bin_dir }}/etcd-backup.sh"
+    mode: "0755"
+    owner: "{{ etcd_user }}"
+    group: "{{ etcd_group }}"
+
+- name: Cron script
+  cron:
+    name: etcd-backup
+    minute: "0"
+    hour: "2"
+    user: root
+    job: "/usr/local/bin/etcd-backup.sh"
+    cron_file: etcd-backup
+...

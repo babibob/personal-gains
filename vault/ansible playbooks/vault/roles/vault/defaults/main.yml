@@ -1,0 +1,28 @@
+---
+
+# group in inventory for which hosts generate certificates
+vault_inventory_group: vault
+vault_etcd_inventory_group: "{{ vault_inventory_group }}"
+
+vault_ca_key: "/etc/{{ vault_inventory_group }}/ssl/ca.key"
+vault_ca_crt: "/etc/{{ vault_inventory_group }}/ssl/ca.crt"
+
+vault_node_key: "/etc/{{ vault_inventory_group }}/ssl/{{ inventory_hostname }}.key"
+vault_node_crt: "/etc/{{ vault_inventory_group }}/ssl/{{ inventory_hostname }}.crt"
+
+vault_version: v1.8.5
+vault_repo: https://rpm.releases.hashicorp.com/RHEL/hashicorp.repo
+
+vault_conf_dir: /etc/vault.d
+vault_user: vault
+vault_group: vault
+
+vault_address: "{{ ansible_default_ipv4.address }}"
+vault_etcd_address: "{{ ansible_default_ipv4.address }}"
+
+vault_etcd_addresses: |-
+  {% for item in groups[vault_etcd_inventory_group] -%}
+      https://{{ hostvars[item]['vault_etcd_address'] | d(hostvars[item][ansible_default_ipv4][address]) }}:2379{% if not loop.last %},{% endif %}
+  {%- endfor %}
+
+...

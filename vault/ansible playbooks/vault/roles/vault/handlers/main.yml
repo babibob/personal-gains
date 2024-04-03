@@ -1,0 +1,5 @@
+---
+- name: vault need restart
+  debug:
+    msg: "Vault config changed. Need manual restart and unseal at {{ inventory_hostname }}"
+...

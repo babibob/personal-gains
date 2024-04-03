@@ -1,0 +1,4 @@
+---
+monitoring_queues:
+  - rabbit-queues-name-there
+ids: " IDS"

@@ -1,0 +1,59 @@
+---
+- name: Create group
+  group:
+    name: "{{ etcd_group }}"
+
+- name: Create user
+  user:
+    name: "{{ etcd_user }}"
+    group: "{{ etcd_group }}"
+    home: "{{ etcd_data_dir }}"
+    create_home: false
+    password_lock: true
+
+- name: Create dirs
+  file:
+    path: "{{ item }}"
+    owner: "{{ etcd_user }}"
+    group: "{{ etcd_group }}"
+    mode: "0750"
+    state: directory
+  with_items:
+    - "{{ etcd_data_dir }}"
+    - "{{ etcd_conf_dir }}"
+
+- name: Create config
+  include_tasks: refresh_config.yml
+
+- name: Create systemd unit
+  template:
+    src: etcd.service.j2
+    dest: /etc/systemd/system/etcd.service
+    backup: true
+    mode: "0644"
+
+- name: start etcd
+  systemd:
+    name: etcd
+    state: started
+    enabled: true
+    daemon_reload: true
+
+- name: Wait for etcd cluster to be healthy
+  shell: "set -o pipefail && {{ etcd_bin_dir }}/etcdctl endpoint --cluster status && {{ etcd_bin_dir }}/etcdctl endpoint --cluster health 2>&1 | grep -v 'Error: unhealthy cluster' >/dev/null"
+  args:
+    executable: /bin/bash
+  register: etcd_cluster_is_healthy
+  until: etcd_cluster_is_healthy.rc == 0
+  retries: "{{ etcd_retries }}"
+  delay: "{{ etcd_retry_stagger | random + 3 }}"
+  changed_when: false
+  check_mode: false
+  run_once: true
+  environment:
+    ETCDCTL_API: 3
+    ETCDCTL_CERT: "{{ etcd_node_crt }}"
+    ETCDCTL_KEY: "{{ etcd_node_key }}"
+    ETCDCTL_CACERT: "{{ etcd_ca_crt }}"
+    ETCDCTL_ENDPOINTS: "{{ etcd_addresses }}"
+...

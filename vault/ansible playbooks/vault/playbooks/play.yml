@@ -1,0 +1,9 @@
+---
+- name: Play on all the hosts
+  hosts: all
+
+  roles:
+    - group_certificates
+    - etcd
+    - vault
+...

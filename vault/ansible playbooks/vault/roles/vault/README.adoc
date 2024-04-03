@@ -1,0 +1,25 @@
+= vault
+:toc: auto
+:source-language: yaml
+
+Role description
+
+Install vault cluster
+
+== Requirements
+
+* *gather_subset:* `min`
+* *Installed collections:*
+  + See link:requirements.yml[requirements.yml]
+
+== Role Variables
+
+[source]
+----
+----
+
+== Dependencies
+
+None
+
+// END

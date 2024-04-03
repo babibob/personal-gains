@@ -1,0 +1,51 @@
+---
+- name: Ensure an OpenSSL private key
+  no_log: true
+  openssl_privatekey:
+    size: "{{ group_certificates_key_size }}"
+    path: "{{ group_certificates_node_key }}"
+    group: "{{ group_certificates_node_group }}"
+    owner: "{{ group_certificates_node_user }}"
+    mode: "{{ group_certificates_node_mode }}"
+
+- name: Generate an node CSR
+  openssl_csr:
+    path: "{{ group_certificates_node_csr }}"
+    privatekey_path: "{{ group_certificates_node_key }}"
+    common_name: "{{ inventory_hostname }}"
+    key_usage_critical: true
+    key_usage:
+      - nonRepudiation
+      - digitalSignature
+      - keyEncipherment
+    extended_key_usage:
+      - clientAuth
+      - serverAuth
+    basicConstraints: "CA:FALSE"
+    basic_constraints_critical: true
+    create_subject_key_identifier: false
+    subject_alt_name:
+      - "DNS:localhost"
+      - "DNS:{{ inventory_hostname }}"
+      - "DNS:{{ inventory_hostname_short }}"
+      - "IP:127.0.0.1"
+      - "IP:{{ ansible_default_ipv4.address }}"
+    group: "{{ group_certificates_node_group }}"
+    owner: "{{ group_certificates_node_user }}"
+    mode: "{{ group_certificates_node_mode }}"
+
+- name: Sign node certificate
+  openssl_certificate:
+    path: "{{ group_certificates_node_crt }}"
+    privatekey_path: "{{ group_certificates_node_key }}"
+    csr_path: "{{ group_certificates_node_csr }}"
+    ownca_path: "{{ group_certificates_ca_crt }}"
+    ownca_privatekey_path: "{{ group_certificates_ca_key }}"
+    ownca_not_after: "{{ group_certificates_node_expiration_time }}"
+    ownca_create_authority_key_identifier: false
+    ownca_create_subject_key_identifier: never_create
+    provider: ownca
+    group: "{{ group_certificates_node_group }}"
+    owner: "{{ group_certificates_node_user }}"
+    mode: "{{ group_certificates_node_mode }}"
+...

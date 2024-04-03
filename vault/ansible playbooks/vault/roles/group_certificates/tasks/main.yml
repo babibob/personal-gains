@@ -1,0 +1,43 @@
+---
+- name: create directory
+  file:
+    path: "{{ item | dirname }}"
+    state: directory
+    owner: "{{ group_certificates_ca_user }}"
+    group: "{{ group_certificates_ca_group }}"
+    mode: "0750"
+  with_items:
+    - "{{ group_certificates_ca_key }}"
+    - "{{ group_certificates_ca_crt }}"
+    - "{{ group_certificates_node_key }}"
+    - "{{ group_certificates_node_crt }}"
+
+- name: check exist CA key
+  stat:
+    path: "{{ group_certificates_ca_key }}"
+  register: __ca_key
+
+- name: check exist CA certificate
+  stat:
+    path: "{{ group_certificates_ca_crt }}"
+  register: __ca_crt
+
+- name: generate ca on first node
+  include_tasks: generate_ca.yml
+  when:
+    - not ( __ca_key.stat.exists and __ca_crt.stat.exists)
+    - inventory_hostname == groups[group_certificates_inventory_group][0]
+
+- name: copy ca from first node
+  include_tasks: copy_ca.yml
+  when:
+    - not ( __ca_key.stat.exists and __ca_crt.stat.exists)
+    - inventory_hostname != groups[group_certificates_inventory_group][0]
+
+- name: update CA trust
+  include: upd_ca_trust.yml
+  when: group_certificates_update_ca
+
+- name: generate Node certificate
+  include: generate_node_cert.yml
+...

@@ -1,0 +1,18 @@
+---
+- name: Refresh config | Create etcd config file
+  template:
+    src: etcd.env.j2
+    dest: "{{ etcd_conf_dir }}/etcd.env"
+    mode: "0640"
+    owner: "{{ etcd_user }}"
+    group: "{{ etcd_group }}"
+  notify: restart etcd
+
+- name: Refresh config | Create etcdctl script file
+  template:
+    src: etcdctl.sh.j2
+    dest: "{{ etcd_bin_dir }}/etcdctl.sh"
+    mode: "0755"
+    owner: "{{ etcd_user }}"
+    group: "{{ etcd_group }}"
+...

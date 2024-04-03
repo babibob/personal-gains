@@ -1,0 +1,40 @@
+---
+- name: Create temp dir for download file
+  tempfile:
+    state: directory
+  register: __etcd_download_dir
+
+- name: Download archive
+  get_url:
+    url: "{{ etcd_download_url }}"
+    dest: "{{ __etcd_download_dir.path }}"
+    checksum: "sha256:{{ etcd_download_checksum }}"
+  register: __etcd_downlad_result
+  until: "'OK' in __etcd_downlad_result.msg or 'file already exists' in __etcd_downlad_result.msg"
+  retries: 4
+  delay: 20
+
+- name: extract_file | Unpacking archive
+  unarchive:
+    src: "{{ __etcd_download_dir.path }}/{{ etcd_download_url | basename }}"
+    dest: "{{ __etcd_download_dir.path }}"
+    remote_src: true
+
+- name: copy binaries from temp dir to bin dir
+  copy:
+    src: "{{ __etcd_download_dir.path }}/{{ etcd_download_url | basename | regex_replace('\\.tar\\.gz$') }}/{{ item }}"
+    dest: "{{ etcd_bin_dir }}/{{ item }}"
+    mode: "0755"
+    owner: root
+    group: root
+    remote_src: true
+  with_items:
+    - etcd
+    - etcdctl
+    - etcdutl
+
+- name: delete temp dir
+  file:
+    path: "{{ __etcd_download_dir.path }}"
+    state: absent
+...

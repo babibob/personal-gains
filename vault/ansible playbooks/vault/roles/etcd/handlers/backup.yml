@@ -1,0 +1,47 @@
+---
+- name: Backup etcd data
+  command: /bin/true
+  notify:
+    - Refresh Time Fact
+    - Set Backup Directory
+    - Create Backup Directory
+    - Backup etcd v3 data
+    - Remove old etcd backups
+  when: etcd_cluster_is_healthy.rc == 0
+
+- name: Refresh Time Fact
+  setup: filter=ansible_date_time
+
+- name: Set Backup Directory
+  set_fact:
+    etcd_backup_directory: "{{ etcd_backup_prefix }}/etcd-{{ ansible_date_time.date }}_{{ ansible_date_time.time }}"
+
+- name: Create Backup Directory
+  file:
+    path: "{{ etcd_backup_directory }}"
+    state: directory
+    owner: root
+    group: root
+    mode: "0600"
+
+- name: Backup etcd v3 data
+  command: >-
+    {{ etcd_bin_dir }}/etcdctl
+      snapshot save {{ etcd_backup_directory }}/snapshot.db
+  environment:
+    ETCDCTL_API: 3
+    ETCDCTL_ENDPOINTS: "{{ etcd_addresses.split(',') | first }}"
+    ETCDCTL_CERT: "{{ etcd_node_crt }}"
+    ETCDCTL_KEY: "{{ etcd_node_key }}"
+    ETCDCTL_CACERT: "{{ etcd_ca_crt }}"
+  retries: 3
+  register: etcd_backup_v3_command
+  until: etcd_backup_v3_command.rc == 0
+  delay: "{{ etcd_retry_stagger | random + 3 }}"
+
+- name: Remove old etcd backups
+  shell:
+    chdir: "{{ etcd_backup_prefix }}"
+    cmd: "find . -name 'etcd-*' -type d | sort -n | head -n -{{ etcd_backup_retention_count }} | xargs rm -rf"
+  when: etcd_backup_retention_count >= 0
+...

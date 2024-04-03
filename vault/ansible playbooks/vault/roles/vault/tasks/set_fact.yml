@@ -1,0 +1,6 @@
+---
+- name: set fact
+  set_fact:
+    vault_address: "{{ vault_address }}"
+    vault_etcd_address: "{{ vault_etcd_address }}"
+...

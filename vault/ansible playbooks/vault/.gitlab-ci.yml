@@ -1,0 +1,27 @@
+---
+stages:
+  - test
+
+workflow:
+  rules:
+    - if: $CI_COMMIT_BRANCH == "master"
+    - if: $CI_MERGE_REQUEST_ID
+    - if: $CI_PIPELINE_SOURCE == 'web'
+
+.lint_test:
+  before_script:
+    - export LC_ALL=en_US.utf8
+  image:
+    name: $SERVICE_IMAGE
+  stage: test
+
+lint:yaml:
+  extends: .lint_test
+  script:
+    - yamllint -f colored .
+
+lint:ansible:
+  extends: .lint_test
+  script:
+    - ansible-lint --force-color .
+...

@@ -1,0 +1,24 @@
+---
+- name: Gather CA certs from first node
+  no_log: true
+  slurp:
+    src: "{{ item }}"
+  register: __group_certificates_slurp_ca
+  with_items:
+    - "{{ group_certificates_ca_key }}"
+    - "{{ group_certificates_ca_crt }}"
+  delegate_to: "{{ groups[group_certificates_inventory_group][0] }}"
+  run_once: true
+
+- name: Write CA certs to nodes
+  no_log: true
+  copy:
+    dest: "{{ item.item }}"
+    content: "{{ item.content | b64decode }}"
+    group: "{{ group_certificates_ca_group }}"
+    owner: "{{ group_certificates_ca_user }}"
+    mode: "{{ group_certificates_ca_mode }}"
+  with_items: "{{ __group_certificates_slurp_ca.results }}"
+  loop_control:
+    label: "{{ item.item }}"
+...

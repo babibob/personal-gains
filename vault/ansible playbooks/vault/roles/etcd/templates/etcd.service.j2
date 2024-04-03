@@ -1,0 +1,16 @@
+[Unit]
+Description=etcd
+After=network.target
+
+[Service]
+Type=notify
+User={{ etcd_user }}
+EnvironmentFile={{ etcd_conf_dir }}/etcd.env
+ExecStart={{ etcd_bin_dir }}/etcd
+NotifyAccess=all
+Restart=always
+RestartSec=10s
+LimitNOFILE=40000
+
+[Install]
+WantedBy=multi-user.target

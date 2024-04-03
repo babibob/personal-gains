@@ -1,0 +1,49 @@
+---
+  - name: Uninstall some packages
+    apt:
+      name: "{{ packages }}"
+      state: absent
+    vars:
+      packages:
+        - apparmor
+        - nftables
+
+  - name: Install common packages
+    apt:
+      name: "{{ packages }}"
+      state: latest
+    vars:
+      packages:
+        - atop
+        - ethtool
+        - bash-completion
+        - bind9-utils
+        - bzip2
+        - git-core
+        - htop
+        - iftop
+        - iotop
+        - iptables
+        - iptables-persistent
+        - jq
+        - linux-perf
+        - lsof
+        - mc
+        - mlocate
+        - nano
+        - netcat
+        - net-tools
+        - chrony
+        - rsync
+        - screen
+        - strace
+        - sysstat
+        - tcpdump
+        - telnet
+        - tmux
+        - vim
+        - wget
+        - unzip
+
+  - name: Setting timezone to Moscow
+    timezone: name=UTC

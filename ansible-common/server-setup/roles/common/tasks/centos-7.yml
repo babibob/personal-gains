@@ -1,0 +1,91 @@
+---
+
+  - name: Uninstall some packages
+    yum:
+      name: "{{ packages }}"
+      state: absent
+    vars:
+      packages:
+        - chrony
+        - firewalld
+        - postfix
+
+  - name: Install epel repo
+    yum:
+      name: epel-release
+      state: present
+
+  - name: Install common packages
+    yum:
+      name: "{{ packages }}"
+      state: present
+    vars:
+      packages:
+        - atop
+        - ethtool
+        - bash-completion
+        - bind-utils
+        - bzip2
+        - git-core
+        - htop
+        - iftop
+        - iotop
+        - jq
+        - lsof
+        - mc
+        - mlocate
+        - nano
+        - nc
+        - net-tools
+        - ntp
+        - numactl
+        - perf
+        - screen
+        - strace
+        - sysstat
+        - tcpdump
+        - telnet
+        - tmux
+        - vim
+        - wget
+        - unzip
+        - yum-utils
+
+  - name: Setting timezone to Nicosia
+    timezone: name=Europe/Nicosia
+
+  - name: Copy systemd unit /etc/systemd/system/disable-thp.service (Disable Transparent Huge Pages)
+    copy:
+      src: disable-thp.service
+      dest: /etc/systemd/system/disable-thp.service
+      owner: root
+      group: root
+      mode: '0644'
+
+  - name: Enabling services
+    systemd:
+      name: "{{ item }}"
+      state: started
+      enabled: yes
+      daemon_reload: yes
+    loop:
+        - ntpd
+        - disable-thp
+
+  - name: Enable system modules
+    block:
+      - name: Create modules conf files
+        lineinfile:
+          create: yes
+          path: "{{ item.path }}"
+          line: "{{ item.line }}"
+          mode: '0644'
+        loop:
+          - { path: /etc/modules-load.d/nf_conntrack.conf, line: nf_conntrack}
+
+      - name: Load system modules
+        modprobe:
+          name: "{{ item }}"
+          state: present
+        loop:
+          - nf_conntrack

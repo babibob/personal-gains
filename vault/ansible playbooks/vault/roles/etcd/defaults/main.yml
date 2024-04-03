@@ -1,0 +1,77 @@
+---
+
+# group in inventory for which hosts generate certificates
+etcd_inventory_group: etcd
+
+# Please set uniuque value. Use for generate cluster and member id
+etcd_init_token: ChangMe_in_inventory
+
+etcd_ca_key: "/etc/{{ etcd_inventory_group }}/ssl/ca.key"
+etcd_ca_crt: "/etc/{{ etcd_inventory_group }}/ssl/ca.crt"
+
+etcd_node_key: "/etc/{{ etcd_inventory_group }}/ssl/{{ inventory_hostname }}.key"
+etcd_node_crt: "/etc/{{ etcd_inventory_group }}/ssl/{{ inventory_hostname }}.crt"
+
+etcd_version: v3.5.1
+
+etcd_image_arch: amd64
+etcd_download_url: "https://github.com/coreos/etcd/releases/download/{{ etcd_version }}/etcd-{{ etcd_version }}-linux-{{ etcd_image_arch }}.tar.gz"
+etcd_download_checksum: 728a14914217ce60de2e1299fc1a2c2c5564e7ffd0d9dadf3f5073103ab619b4
+
+etcd_bin_dir: /usr/local/bin
+etcd_conf_dir: /etc/etcd
+etcd_data_dir: /var/lib/etcd
+etcd_backup_prefix: "/var/backups"
+etcd_user: etcd
+etcd_group: etcd
+
+etcd_address: "{{ ansible_default_ipv4.address }}"
+etcd_peer_url: "https://{{ etcd_address }}:2380"
+etcd_client_url: "https://{{ etcd_address }}:2379"
+
+# user should set etcd_member_name in inventory/mycluster/hosts.ini
+etcd_member_name: |-
+  {% for host in groups[etcd_inventory_group] %}
+  {%   if inventory_hostname == host %}{{ hostvars[host].etcd_member_name | default("etcd" + loop.index|string) }}{% endif %}
+  {% endfor %}
+etcd_peer_addresses: |-
+  {% for item in groups[etcd_inventory_group] -%}
+    {{ hostvars[item].etcd_member_name | default("etcd" + loop.index|string) }}=https://{{ hostvars[item].etcd_address }}:2380{% if not loop.last %},{% endif %}
+  {%- endfor %}
+etcd_addresses: |-
+  {% for item in groups[etcd_inventory_group] -%}
+      https://{{ hostvars[item]['etcd_address'] }}:2379{% if not loop.last %},{% endif %}
+  {%- endfor %}
+
+etcd_heartbeat_interval: "250"
+etcd_election_timeout: "5000"
+etcd_snapshot_count: "10000"
+
+etcd_metrics: "basic"
+
+# Force clients like etcdctl to use TLS certs (different than peer security)
+etcd_secure_client: true
+
+# Enable peer client cert authentication
+etcd_peer_client_auth: true
+
+# Maximum number of snapshot files to retain (0 is unlimited)
+etcd_max_snapshots: 5
+
+# Maximum number of wal files to retain (0 is unlimited)
+etcd_max_wals: 5
+
+# Number of etcd backups to retain. Set to a value < 0 to retain all backups
+etcd_backup_retention_count: 30
+etcd_compaction_retention: "8"
+
+etcd_retry_stagger: 5
+# Number of loop retries
+etcd_retries: 4
+
+etcd_extra_vars: {}
+
+etcd_backup_dir: /var/backups/etcd
+etcd_backup_keep_days: 30
+etcd_backup_arc: gzip
+...

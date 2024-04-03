@@ -1,0 +1,26 @@
+ui            = true
+
+listener "tcp" {
+  address         = "{{ vault_address }}:8200"
+  cluster_address = "{{ vault_address }}:8201"
+  tls_cert_file   = "{{ vault_node_crt }}"
+  tls_key_file    = "{{ vault_node_key }}"
+}
+
+listener "tcp" {
+  address       = "127.0.0.1:8200"
+  tls_cert_file = "{{ vault_node_crt }}"
+  tls_key_file  = "{{ vault_node_key }}"
+}
+
+storage "etcd" {
+  address = "{{ vault_etcd_addresses }}"
+  etcd_api = "v3"
+  ha_enabled = "true"
+  tls_ca_file = "{{ vault_ca_crt }}"
+  tls_cert_file = "{{ vault_node_crt }}"
+  tls_key_file = "{{ vault_node_key }}"
+}
+
+api_addr = "https://{{ vault_address }}:8200"
+cluster_addr = "https://{{ vault_address }}:8201"

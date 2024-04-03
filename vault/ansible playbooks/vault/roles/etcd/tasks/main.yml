@@ -1,0 +1,53 @@
+---
+- name: set fact
+  import_tasks: set_fact.yml
+
+- name: create directory
+  file:
+    path: "{{ etcd_bin_dir }}"
+    state: directory
+    mode: "0755"
+
+- name: check etcd binary
+  stat:
+    path: "{{ etcd_bin_dir }}/etcd"
+  register: __etcd_bin
+
+- name: check etcdctl binary
+  stat:
+    path: "{{ etcd_bin_dir }}/etcdctl"
+  register: __etcdctl_bin
+
+- name: Download etcd binaries
+  include_tasks: download_etcd.yml
+  when:
+    - not ( __etcd_bin.stat.exists and __etcdctl_bin.stat.exists)
+
+- name: Prepare
+  import_tasks: prepare.yml
+
+- name: Check if member is in etcd cluster
+  shell: "{{ etcd_bin_dir }}/etcdctl member list | grep -q {{ etcd_address }}"
+  register: etcd_member_in_cluster
+  ignore_errors: true  # noqa ignore-errors
+  changed_when: false
+  check_mode: false
+  environment:
+    ETCDCTL_API: 3
+    ETCDCTL_CERT: "{{ etcd_node_crt }}"
+    ETCDCTL_KEY: "{{ etcd_node_key }}"
+    ETCDCTL_CACERT: "{{ etcd_ca_crt }}"
+    ETCDCTL_ENDPOINTS: "{{ etcd_addresses }}"
+
+- name: Join member(s) to etcd cluster one at a time
+  include_tasks: join_etcd_member.yml
+  with_items: "{{ groups[etcd_inventory_group] }}"
+  when:
+    - inventory_hostname == item
+    - etcd_member_in_cluster.rc != 0
+    - etcd_cluster_is_healthy.rc == 0
+
+- name: Backup script
+  import_tasks: backup_script.yml
+
+...

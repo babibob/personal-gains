@@ -1,0 +1,2 @@
+---
+bacula_backup_key: "{{ lookup('pipe', 'vault kv get -address=http://vault.local -field=data infra/backup/ansadm-user') }}"

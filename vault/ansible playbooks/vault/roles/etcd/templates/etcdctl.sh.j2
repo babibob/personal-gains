@@ -1,0 +1,9 @@
+#!/bin/bash
+
+export ETCDCTL_API=3
+export ETCDCTL_CERT="{{ etcd_node_crt }}"
+export ETCDCTL_KEY="{{ etcd_node_key }}"
+export ETCDCTL_CACERT="{{ etcd_ca_crt }}"
+export ETCDCTL_ENDPOINTS="{{ etcd_addresses }}"
+
+/usr/local/bin/etcdctl "$@"

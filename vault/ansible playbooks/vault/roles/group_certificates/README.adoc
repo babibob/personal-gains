@@ -1,0 +1,58 @@
+= group_certificates
+:toc: auto
+:source-language: yaml
+
+Role description
+
+Generate selfsigned CA on first node of group group_certificates_inventory_group
+copy CA to other nodes
+
+Generate node certificates signed by CA
+
+== Requirements
+
+* *gather_subset:* `min`
+* *Installed collections:*
+  + See link:requirements.yml[requirements.yml]
+
+== Role Variables
+
+[source]
+----
+# group in inventory for which hosts generate certificates
+group_certificates_inventory_group: vault
+
+# path for CA cert files
+group_certificates_ca_key: "/etc/{{ group_certificates_inventory_group }}/ssl/ca.key"
+group_certificates_ca_csr: "/etc/{{ group_certificates_inventory_group }}/ssl/ca.csr"
+group_certificates_ca_crt: "/etc/{{ group_certificates_inventory_group }}/ssl/ca.crt"
+# CA expiration time
+group_certificates_ca_expiration_time: "+36500d" # 100 years
+
+group_certificates_ca_user: "{{ group_certificates_inventory_group }}"
+group_certificates_ca_group: "{{ group_certificates_inventory_group }}"
+group_certificates_ca_mode: "0600"
+
+# path for Node cert files
+group_certificates_node_key: "/etc/{{ group_certificates_inventory_group }}/ssl/{{ inventory_hostname }}.key"
+group_certificates_node_csr: "/etc/{{ group_certificates_inventory_group }}/ssl/{{ inventory_hostname }}.csr"
+group_certificates_node_crt: "/etc/{{ group_certificates_inventory_group }}/ssl/{{ inventory_hostname }}.crt"
+# Node cert expiration time
+group_certificates_node_expiration_time: "+36500d" # 100 years
+
+group_certificates_node_user: "{{ group_certificates_inventory_group }}"
+group_certificates_node_group: "{{ group_certificates_inventory_group }}"
+group_certificates_node_mode: "0600"
+
+# update system CA trust with selfsigned CA
+group_certificates_update_ca: true
+
+group_certificates_key_size: 4096
+
+----
+
+== Dependencies
+
+None
+
+// END

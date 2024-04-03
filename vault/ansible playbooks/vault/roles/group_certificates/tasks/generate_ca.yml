@@ -1,0 +1,51 @@
+---
+- name: Ensure no CA key on other host
+  delegate_to: "{{ item }}"
+  stat:
+    path: "{{ group_certificates_ca_key }}"
+  register: __gen_ca_key_check
+  failed_when: __gen_ca_key_check.stat.exists
+  with_items: "{{ groups[group_certificates_inventory_group] }}"
+
+- name: Ensure no CA cert on other host
+  delegate_to: "{{ item }}"
+  stat:
+    path: "{{ group_certificates_ca_crt }}"
+  register: __gen_ca_crt_check
+  failed_when: __gen_ca_crt_check.stat.exists
+  with_items: "{{ groups[group_certificates_inventory_group] }}"
+
+- name: Ensure an OpenSSL private key
+  no_log: true
+  openssl_privatekey:
+    size: "{{ group_certificates_key_size }}"
+    path: "{{ group_certificates_ca_key }}"
+    group: "{{ group_certificates_ca_group }}"
+    owner: "{{ group_certificates_ca_user }}"
+    mode: "{{ group_certificates_ca_mode }}"
+
+- name: Generate an CA CSR.
+  openssl_csr:
+    path: "{{ group_certificates_ca_csr }}"
+    privatekey_path: "{{ group_certificates_ca_key }}"
+    common_name: "{{ group_certificates_inventory_group }}"
+    key_usage:
+      - digitalSignature
+      - keyCertSign
+      - cRLSign
+    basicConstraints: "CA:TRUE"
+    group: "{{ group_certificates_ca_group }}"
+    owner: "{{ group_certificates_ca_user }}"
+    mode: "{{ group_certificates_ca_mode }}"
+
+- name: Generate a Self Signed OpenSSL CA certificate.
+  openssl_certificate:
+    path: "{{ group_certificates_ca_crt }}"
+    privatekey_path: "{{ group_certificates_ca_key }}"
+    csr_path: "{{ group_certificates_ca_csr }}"
+    selfsigned_not_after: "{{ group_certificates_ca_expiration_time }}"
+    provider: selfsigned
+    group: "{{ group_certificates_ca_group }}"
+    owner: "{{ group_certificates_ca_user }}"
+    mode: "{{ group_certificates_ca_mode }}"
+...

@@ -1,0 +1,33 @@
+---
+- name: target ca-certificates path
+  set_fact:
+    __group_certificates_ca_path: |-
+      {% if ansible_os_family == "Debian" -%}
+      /usr/local/share/ca-certificates/{{ group_certificates_inventory_group }}-ca.crt
+      {%- elif ansible_os_family == "RedHat" -%}
+      /etc/pki/ca-trust/source/anchors/{{ group_certificates_inventory_group }}-ca.crt
+      {%- elif ansible_os_family in ["CoreOS", "Container Linux by CoreOS"] -%}
+      /etc/ssl/certs/{{ group_certificates_inventory_group }}-ca.pem
+      {%- elif ansible_os_family == "Suse" -%}
+      /etc/pki/trust/anchors/kube-ca.pem
+      {%- endif %}
+
+- name: add CA to trusted CA dir
+  copy:
+    src: "{{ group_certificates_ca_crt }}"
+    dest: "{{ __group_certificates_ca_path }}"
+    remote_src: true
+  register: __group_certificates_ca
+
+- name: update ca-certificates (Debian/Ubuntu/SUSE/Container Linux by CoreOS)
+  command: update-ca-certificates
+  when:
+    - __group_certificates_ca.changed
+    - ansible_os_family in ["Debian", "CoreOS", "Container Linux by CoreOS", "Suse"]
+
+- name: update ca-certificates (RedHat)
+  command: update-ca-trust extract
+  when:
+    - __group_certificates_ca.changed
+    - ansible_os_family == "RedHat"
+...
