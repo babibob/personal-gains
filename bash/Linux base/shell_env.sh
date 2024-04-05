@@ -1,6 +1,9 @@
 # What script do
 https://explainshell.com/
+# For more look there
+https://tldp.org/LDP/abs/html/
 
+#----#
 # History full clean
 cat /dev/null> ~ /.bash_history && history -c && exit
 
@@ -23,4 +26,3 @@ journalctl -t sshd -b0 -r
 
 # Generate ssh keys with comment
 ssh-keygen -t ed25519 -C "user.name@g5e.com"
-
