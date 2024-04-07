@@ -62,15 +62,3 @@ k get node -o jsonpath='{range .items[*]}{.metadata.name}{" "}{.status.allocatab
 for nodename in $(k get node | grep -v NAME -A 0 | awk '{print $1}'); \
     do str=$((str+1)) && echo $str && kubectl get node $nodename -o jsonpath='{range .status.allocatable}{.cpu}{" "}{.memory}{end}' && echo " $nodename";\
 done;
-
-# Otherside tips
-## short list of commands
-https://gist.github.com/kevsersrca/3338725493ba24d29164dde8c0114da4
-## Quick Reference
-https://kubernetes.io/docs/reference/kubectl/quick-reference/
-## Commands examples
-https://kubernetes.io/docs/reference/generated/kubectl/kubectl-commands
-## Another examples
-https://jamesdefabia.github.io/docs/user-guide/kubectl/kubectl_run/
-## Quick Answers
-https://www.grepper.com/answers/406309/kubectl+get+taints

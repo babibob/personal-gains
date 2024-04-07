@@ -1,7 +1,4 @@
-# What script do
-https://explainshell.com/
-# For more look there
-https://tldp.org/LDP/abs/html/
+
 
 #----#
 # History full clean
