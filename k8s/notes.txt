@@ -1,0 +1,80 @@
+EKS cluster:
+
+1.          IAM dashboard
+            1.a "User groups" -> Enter a group name -> "Create group"
+            1.b Click back on the group name -> Perm -> Atach policies -> Choose "administratoraccess" -> Add permissions
+            1.c Users -> "Add users" -> Enter username -> Add user to usergroup -> Add tags -> Copy ARN
+            1.d Generate Access key and secret acccess key ID -> Scroll down -> "Create access key" -> Select CLI -> Add description
+
+2.          aws configure -> Enter info -> .aws/{config,credential}
+            aws iam get-user
+            aws eks list-clesters
+            aws <resource_name> help
+
+3.          eksctl create cluster -f cluster_manifest.yml
+            kubectl get nodes
+            kubectl config get-contexts
+            kubectl get pods -A
+
+4.          kubectl apply -f namespace.yml
+            kubectl apply -f deployment.yml ---- labels : key: value
+            kubectl -n staging get deploy   ^^^^ selector: key: value
+            kubectl -n staging get all
+
+5.          Add tags to VPC private network:
+
+                kubernetes.io/role/internal-elb:1
+                kubernetes.io/cluster/lil-eks:shared
+
+            Add tags to VPC public network:
+
+                kubernetes.io/role/elb:1
+                kubernetes.io/cluster/lil-eks:shared
+
+6.          Create a service account for the Load Balancer Controller
+
+            aws iam create policy \
+            --policy-name AWSLoadBalancerControllerIAMPollicy \
+            --policy-document file:/iam_policy.json
+
+            eksctl utils associate-iam-oidc-provider --clisert <cluster-name> --approve
+
+            eksctl create iamserviceaccount \
+                --cluster=<CLUSTER_NAME>
+                --name=aws-load-balancer-controller \
+                --namespace=kube-system
+                --attach-policy-arn=arn:aws:aim::xxx:police/AWSLoadBalancerControllerIAMPollicy \
+                --approve
+
+            kubectl -n kube-system get sa
+
+7.          CloudFormation - amazon IaC - show usefull info
+
+8.          Install the AWS Load Balancer Controller
+
+            kubectl apply \
+            --validate=false \
+            -f https://github.com/cert-manager/cert-manager/releases/download/v1.14.3/cert-manager.yaml
+
+            kubectl -n cert-manager get pods
+
+            kubectl apply -f lb-controller.yml
+
+            kubectl -n kube-system get deploy
+
+            kubectl get ingress -A -- The AWS load Balancer Controller is listening to the kube API for any events related to ingress
+                                         and since you have None, there's no need for a load balancer.
+
+9.          Create an Ingress for ypur applocation
+
+            kubectl apply -f ingress-class.yml
+            kubectl apply -f pod-info-ingress.yml
+
+            kubectl -n staging get svc
+            kubectl -n staging get ing
+
+10.         DELETE cluster
+            10.a Manualy delete the Load balancers -> EC2 > Load balancers
+            10.b eksctl delete cluster --name <CLUSTER_NAME>
+            10.c Manualy delete anything that remains -> Pay special attention to VPC, EC2, CloudFormation, EKS
+
