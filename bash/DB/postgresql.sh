@@ -8,7 +8,12 @@ PGPASSWORD="${POSTGRES_PASS}" pg_dump   --no-owner \
                                         ${POSTGRES_DB} > /nightly/$FOLDER/postgres/postgres.sql
 
 # Restore postgress from database backup
-pg_restore --host=HOSTNAME --username=USERNAME --password -f ./backup_file.sql
-psql --host=HOSTNAME --username=USERNAME --password -d DBNAME < ./db_dump.sql
+pg_restore --host=<HOSTNAME> --username=<USERNAME> --password -f ./backup_file.sql
+psql --host=<HOSTNAME> --username=<USERNAME> --password -d DBNAME < ./db_dump.sql
 
 
+# Transfer bases from one to another
+psql -h <SRV-02> -l                                         # List db on SRV-02
+createdb -h <SRV-02>  -T template0 <newbase>                # Create db, before transfer it
+apt install postgresql-client-<VERSION>                     # Install client for create remote connection
+pg_dump -h <SRV-01> <oldbase> | psql -h <SRV-02> <newbase>  # Transfer db's between servers

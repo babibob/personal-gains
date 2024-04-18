@@ -20,3 +20,8 @@ find -not -empty -type f -printf "%s\n" | sort -rn | uniq -d \
 
 # Find and remove files *com.*
 find . -type f -name *com.* -print -exec /bin/rm {} \;
+# Delete file, oldest then 20 days
+find /backup -type f -mtime +20 -exec rm -f {} \;
+
+# Leave the last N files
+ls -t | grep <backupname.gz> | tail -n+<N> | xargs -i rm '{}' #  N == count of copies
