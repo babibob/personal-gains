@@ -1,4 +1,4 @@
-Address =  79.143.25.247 655 
-Cipher = aes-128-cbc 
-Digest = sha1 
+Address =  <IP> <PORT>
+Cipher = aes-128-cbc
+Digest = sha1
 Compression = 0
