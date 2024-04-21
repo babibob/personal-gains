@@ -1,0 +1,21 @@
+---
+spec:
+  commonName: "{{ prom_stack_values.prometheus.ingress.hosts[0] }}"
+  dnsNames:
+  - "{{ prom_stack_values.prometheus.ingress.hosts[0] }}"
+{% if prom_stack_values.alertmanager.ingress is defined %}
+  - "{{ prom_stack_values.alertmanager.ingress.hosts[0] }}"
+{% endif %}
+{% if prom_stack_values.grafana.ingress is defined %}
+  - "{{ prom_stack_values.grafana.ingress.hosts[0] }}"
+{% endif %}
+  duration: 2160h0m0s
+  issuerRef:
+    kind: ClusterIssuer
+    name: "{{ prom_stack_tls_certificate_issuer }}"
+  renewBefore: 360h0m0s
+  secretName: tls-certificate
+  usages:
+  - server auth
+  - client auth
+...

@@ -1,0 +1,101 @@
+---
+- name: Check role requirements
+  assert:
+    that:
+      - prom_stack_chart_version|length > 0
+
+- name: Set URL for chart repo
+  include_vars: "{{ prom_stack_chart_repo }}_chart_repo.yml"
+
+- name: Setup prometheus-community Helm repo
+  kubernetes.core.helm_repository:
+    name: prometheus-community
+    repo_url: "{{ prom_stack_chart_repo_url }}"
+  environment: "{{ prom_stack_helm_environment }}"
+
+- name: Ensure required dirs exists
+  file:
+    path: "{{ item.path }}"
+    state: directory
+    mode: "{{ item.mode|d('0755') }}"
+  loop:
+    - path: "{{ prom_stack_dirs.downloads }}/{{ prom_stack_chart_version }}"
+
+- name: Pull kube-prometheus-stack chart archive
+  command: >
+    helm pull prometheus-community/kube-prometheus-stack --version "{{ prom_stack_chart_version }}"
+  args:
+    chdir: "{{ prom_stack_dirs.downloads }}"
+    creates: "{{ prom_stack_dirs.downloads }}/kube-prometheus-stack-{{ prom_stack_chart_version }}.tgz"
+  environment: "{{ prom_stack_helm_environment }}"
+
+- name: Unpack kube-prometheus-stack chart archive
+  unarchive:
+    src: >-
+      {{ prom_stack_dirs.downloads }}/kube-prometheus-stack-{{ prom_stack_chart_version }}.tgz
+    remote_src: true
+    dest: "{{ prom_stack_dirs.downloads }}/{{ prom_stack_chart_version }}"
+    extra_opts:
+      - '--strip-components=1'
+    creates: "{{ prom_stack_dirs.downloads }}/{{ prom_stack_chart_version }}/values.yaml"
+
+- name: Get CRDs file list
+  find:
+    paths: "{{ prom_stack_dirs.downloads }}/{{ prom_stack_chart_version }}/crds"
+  register: __prom_stack_crds_find
+
+# module kubernetes.core.k8s failed when apply prometheus CRD from crd-alertmanagerconfigs.yaml
+- name: Apply kube-prometheus-stack CRDs
+  command:
+    argv:
+      - kubectl
+      - apply
+      - --server-side
+      - -f
+      - "{{ item.path }}"
+  loop: "{{ __prom_stack_crds_find.files }}"
+  loop_control:
+    label: "{{ item.path }}"
+  changed_when: false
+
+- name: Create namespace for kube-prometheus-stack
+  kubernetes.core.k8s:
+    api_version: v1
+    kind: Namespace
+    name: "{{ prom_stack_namespace.name|d(prom_stack_default_namespace) }}"
+    resource_definition:
+      metadata:
+        labels: "{{ prom_stack_namespace.labels|d({}) }}"
+  when: prom_stack_namespace.create|d(true)
+
+- name: Create Certificate object for defined ClusterIssuer
+  kubernetes.core.k8s:
+    api_version: cert-manager.io/v1
+    kind: Certificate
+    name: tls-main
+    namespace: "{{ prom_stack_namespace.name|d(prom_stack_default_namespace) }}"
+    resource_definition: "{{ lookup('template', 'certificate.yml.j2')|from_yaml }}"
+  when:
+    - prom_stack_tls_certificate_issuer is defined
+    - prom_stack_values.prometheus.ingress is defined
+
+- name: Install kube-prometheus-stack Helm chart release
+  kubernetes.core.helm:
+    name: "{{ prom_stack_helm_release_name }}"
+    chart_ref: prometheus-community/kube-prometheus-stack
+    release_namespace: "{{ prom_stack_namespace.name|d(prom_stack_default_namespace) }}"
+    release_values: >-
+      {{ prom_stack_default_values
+      |combine(prom_stack_values, recursive=True)
+      |combine(prom_stack_values_extra, recursive=True) }}
+    chart_version: "{{ prom_stack_chart_version }}"
+    atomic: "{{ prom_stack_helm_atomic|ternary('yes', 'no') }}"
+    skip_crds: true
+    wait: true
+  environment: "{{ prom_stack_helm_environment }}"
+
+- name: Install prometheus-adapter
+  include_tasks: prometheus_adapter.yml
+  when:
+    - prom_stack_prometheus_adapter_enable
+...

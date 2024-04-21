@@ -1,0 +1,30 @@
+---
+# main.yml
+bcmw_chart_version: 1.19.0
+bcmw_helm_atomic: true
+bcmw_helm_environment: {}
+bcmw_helm_release_name: vault-secrets-webhook
+bcmv_chart_repo: original
+
+bcmw_values: {}
+
+# setup.yml
+bcmw_access_sa_name: '*'
+bcmw_auth_issuer: kubernetes.default.svc
+bcmw_auth_disable_iss_validation: false
+bcmw_auth_method_name: kubernetes-staging
+bcmw_delegator_sa_name: vault-auth-delegator
+bcmw_delegator_sa_namespace: users-system
+bcmw_policy_prefix: ansible-webhook
+
+bcmw_policy: |-
+  path "{{ engine['kv'] }}" {
+    capabilities = ["list"]
+  }
+
+  path "{{ engine['kv'] }}/*" {
+    capabilities = [{{ (engine['mode']|d('ro') == 'rw')|ternary('"create", "update", "delete", ', '') }}"read", "list"]
+  }
+
+bcmw_vault_token: "{{ lookup('env', 'VAULT_TOKEN') }}"
+...

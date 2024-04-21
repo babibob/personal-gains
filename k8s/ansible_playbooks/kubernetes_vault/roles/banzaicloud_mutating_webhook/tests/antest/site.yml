@@ -1,0 +1,19 @@
+---
+- name: Local role testing
+  hosts: localhost
+  gather_facts: false
+
+  environment:
+    VAULT_ADDR: "{{ bcmw_vault_addr }}"
+    VAULT_FORMAT: json
+
+  tasks:
+    - name: Import banzaicloud_mutating_webhook role for webhook deploy
+      import_role:
+        name: banzaicloud_mutating_webhook
+
+    - name: Import banzaicloud_mutating_webhook role for objects setup
+      import_role:
+        name: banzaicloud_mutating_webhook
+        tasks_from: setup.yml
+...

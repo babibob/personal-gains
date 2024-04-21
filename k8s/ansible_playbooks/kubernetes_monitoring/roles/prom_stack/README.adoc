@@ -1,0 +1,85 @@
+= kube-prometheus-stack
+:toc: auto
+:source-language: yaml
+
+Deploy *prometheus-community/kube-prometheus-stack* Helm chart and prometheus adapter for kube metrics API.
+See default link:https://github.com/prometheus-community/helm-charts/blob/main/charts/kube-prometheus-stack/values.yaml[values on GitHub].
+
+== Requirements
+
+* *gather_facts:* `false`
+* *Installed collections:*
+** kubernetes.core
+
+=== GitLab CI
+
+Setup cache path
+
+[source]
+----
+kube_stack_helm_environment:
+  HELM_CACHE_HOME: "{{ lookup('env', 'CI_PROJECT_DIR') }}/.helm/cache"
+  HELM_CONFIG_HOME: "{{ lookup('env', 'CI_PROJECT_DIR') }}/.helm/config"
+----
+
+[source]
+----
+.ansible_job_template:
+  cache:
+    key: $CIRCUIT
+    paths:
+      - .helm/
+      - ansible_downloads/
+----
+
+== Role Variables
+
+[source]
+----
+prom_stack_chart_version: string  # e.q. "17.1.3"
+
+prom_stack_helm_atomic: bool  # default is true
+prom_stack_helm_environment: object  # environment variables passed to Helm
+prom_stack_helm_release_name: string  # default is "prometheus-stack"
+
+prom_stack_namespace:
+  name: string  # default is 'monitoring'
+  create: bool   # default is true
+  labels: object  # default is {}
+
+prom_stack_values: object  # Custom values
+prom_stack_values_extra: object  # Custom values (more priority than prom_stack_values)
+
+prom_stack_tls_certificate_issuer: string  # e.q. 'letsencrypt'; default is undefined.
+
+prom_stack_adapter_enable: bool # default is true - install prometheus adapter with kube metrics API rules
+prom_stack_adapter_helm_release_name: string # default is prometheus-adapter
+prom_stack_adapter_chart_version: string # default is "3.2.2"
+
+prom_stack_adapter_values: object  # Custom values
+prom_stack_adapter_values_extra: object  # Custom values (more priority than prom_stack_adapter_values)
+----
+
+See default values in link:vars/main.yml[vars/main.yml].
+
+== Dependencies
+
+None
+
+== Example Inventory
+
+Inventory with additional scrape config, alert rules, telegram messages templates and alertmanager configuration.
+Included from file via `lookup()` ansible functions:
+
+See link:example-inventory[example inventory]
+
+== Example Playbook
+
+See link:tests/antest/site.yml[test site.yml].
+
+
+== Example Variables
+
+See link:tests/antest/inventory/hosts.yml[test hosts.yml]
+
+// END

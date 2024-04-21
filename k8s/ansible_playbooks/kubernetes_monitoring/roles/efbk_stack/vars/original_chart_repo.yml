@@ -1,0 +1,13 @@
+---
+efbk_chart_repo_url: https://helm.elastic.co/
+efbk_curator_chart_repo_url: https://lebenitza.github.io/charts
+
+# Download images from docker hub
+
+efbk_elasticsearch_default_values:
+  image: elasticsearch
+efbk_filebeat_default_values:
+  image: elastic/filebeat
+efbk_kibana_default_values:
+  image: kibana
+...

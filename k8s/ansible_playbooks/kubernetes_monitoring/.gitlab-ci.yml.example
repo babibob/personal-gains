@@ -1,0 +1,12 @@
+---
+stages:
+  - lint
+
+include:
+  - project: templates/ci
+    ref: master
+    file: /workflow_master_or_mr.tmpl.yml
+  - project: templates/ci
+    ref: master
+    file: /ansible_lint.tmpl.yml
+...

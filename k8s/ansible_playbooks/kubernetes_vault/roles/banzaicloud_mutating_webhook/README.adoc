@@ -1,0 +1,52 @@
+= southbridge.kubernetes_vault.banzaicloud_mutating_webhook
+:toc: auto
+:source-language: yaml
+
+Deploy *banzaicloud-stable/vault-secrets-webhook* Helm chart.
+See default link:https://github.com/banzaicloud/bank-vaults/blob/master/charts/vault-secrets-webhook/values.yaml[values on GitHub].
+
+== Requirements
+
+* *gather_facts:* `false`
+* *Installed collections:*
+** `kubernetes.core`
+* Administrative access to K8s and Vault instances
+
+=== GitLab CI
+
+Setup cache path
+
+[source]
+----
+bcmw_helm_environment:
+  HELM_CACHE_HOME: "{{ lookup('env', 'CI_PROJECT_DIR') }}/.helm/cache"
+  HELM_CONFIG_HOME: "{{ lookup('env', 'CI_PROJECT_DIR') }}/.helm/config"
+----
+
+[source]
+----
+.ansible_job_template:
+  cache:
+    key: $CIRCUIT
+    paths:
+      - .helm/
+----
+
+== Role Variables
+
+See link:meta/argument_specs.yml[argument specification]
+(also see default values in link:vars/main.yml[vars/main.yml]).
+
+== Dependencies
+
+None
+
+== Example Playbook
+
+See link:tests/antest/site.yml[test site.yml].
+
+== Example Variables
+
+See link:tests/antest/inventory/hosts.yml[test hosts.yml]
+
+// END

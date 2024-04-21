@@ -1,0 +1,135 @@
+---
+- name: Check role requirements
+  assert:
+    that:
+      - efbk_chart_version|length > 0
+
+- name: Check role requirements if elasticsearch install requested
+  assert:
+    that:
+      - efbk_curator_chart_version|length > 0
+  when: '"elasticsearch-curator" in efbk_install_components'
+
+- name: Create namespace for EFbK stack
+  kubernetes.core.k8s:
+    api_version: v1
+    kind: Namespace
+    name: "{{ efbk_namespace.name|d(efbk_default_namespace) }}"
+    resource_definition:
+      metadata:
+        labels: "{{ efbk_namespace.labels|d({}) }}"
+  when: efbk_namespace.create|d()
+
+- name: Set URL for chart repo
+  include_vars: "{{ efbk_chart_repo }}_chart_repo.yml"
+
+- name: Setup elastic Helm repo
+  kubernetes.core.helm_repository:
+    name: elastic
+    repo_url: "{{ efbk_chart_repo_url }}"
+  environment: "{{ efbk_helm_environment }}"
+
+- name: ElasticSearch section
+  block:
+    - name: Setup stable Helm repo
+      kubernetes.core.helm_repository:
+        name: lebenitza
+        repo_url: "{{ efbk_curator_chart_repo_url }}"
+      environment: "{{ efbk_helm_environment }}"
+
+    - name: Install elasticsearch Helm chart release
+      kubernetes.core.helm:
+        name: "{{ efbk_elasticsearch_helm_release_name }}"
+        chart_ref: elastic/elasticsearch
+        release_namespace: "{{ efbk_namespace.name|d(efbk_default_namespace) }}"
+        release_values: >-
+          {{ efbk_elasticsearch_default_values
+          |combine(efbk_elasticsearch_values, recursive=True)
+          |combine(efbk_elasticsearch_values_extra, recursive=True) }}
+        chart_version: "{{ efbk_chart_version }}"
+        atomic: "{{ efbk_helm_atomic|ternary('yes', 'no') }}"
+        wait: true
+        wait_timeout: "{{ efbk_helm_timeout|d(omit) }}"
+      environment: "{{ efbk_helm_environment }}"
+
+    - name: Install elasticsearch-curator Helm chart release
+      kubernetes.core.helm:
+        name: "{{ efbk_curator_helm_release_name }}"
+        chart_ref: lebenitza/elasticsearch-curator
+        release_namespace: "{{ efbk_namespace.name|d(efbk_default_namespace) }}"
+        release_values: >-
+          {{ efbk_curator_default_values
+          |combine(efbk_curator_values, recursive=True)
+          |combine(efbk_curator_values_extra, recursive=True) }}
+        chart_version: "{{ efbk_curator_chart_version }}"
+        atomic: "{{ efbk_helm_atomic|ternary('yes', 'no') }}"
+        wait: true
+        wait_timeout: "{{ efbk_helm_timeout|d(omit) }}"
+      environment: "{{ efbk_helm_environment }}"
+  when: '"elasticsearch-curator" in efbk_install_components'
+
+- name: Kibana section
+  block:
+    - name: Create Certificate object for defined ClusterIssuer
+      kubernetes.core.k8s:
+        api_version: cert-manager.io/v1
+        kind: Certificate
+        name: tls-main
+        namespace: "{{ efbk_namespace.name|d(efbk_default_namespace) }}"
+        resource_definition:
+          spec:
+            commonName: "{{ efbk_kibana_values.ingress.hosts[0].host }}"
+            dnsNames:
+              - "{{ efbk_kibana_values.ingress.hosts[0].host }}"
+            duration: 2160h0m0s
+            issuerRef:
+              kind: ClusterIssuer
+              name: "{{ efbk_kibana_tls_certificate_issuer }}"
+            renewBefore: 360h0m0s
+            secretName: tls-certificate
+            usages:
+              - server auth
+              - client auth
+      when: efbk_kibana_tls_certificate_issuer is defined
+
+    - name: Install kibana Helm chart release
+      kubernetes.core.helm:
+        name: "{{ efbk_kibana_helm_release_name }}"
+        chart_ref: elastic/kibana
+        release_namespace: "{{ efbk_namespace.name|d(efbk_default_namespace) }}"
+        release_values: >-
+          {{ efbk_kibana_default_values
+          |combine(efbk_kibana_values, recursive=True)
+          |combine(efbk_kibana_values_extra, recursive=True) }}
+        chart_version: "{{ efbk_chart_version }}"
+        atomic: "{{ efbk_helm_atomic|ternary('yes', 'no') }}"
+        wait: true
+        wait_timeout: "{{ efbk_helm_timeout|d(omit) }}"
+      environment: "{{ efbk_helm_environment }}"
+  when: '"kibana" in efbk_install_components'
+
+- name: Create configmap with index lifecycle policy
+  include: filebeat_ilm.yml
+  when:
+    - efbk_maximum_log_age|string|length > 0
+    - '"filebeat" in efbk_install_components'
+    - '"elasticsearch-curator" not in efbk_install_components'
+    - efbk_chart_version is version('7.0.0', '>=')
+
+- name: Install filebeat Helm chart release
+  kubernetes.core.helm:
+    name: "{{ efbk_filebeat_helm_release_name }}"
+    chart_ref: elastic/filebeat
+    release_namespace: "{{ efbk_namespace.name|d(efbk_default_namespace) }}"
+    release_values: >-
+      {{ efbk_filebeat_default_values
+      |combine(_efbk_filebeat_ilm_policy_values|d({}), recursive=True)
+      |combine(efbk_filebeat_values, recursive=True)
+      |combine(efbk_filebeat_values_extra, recursive=True) }}
+    chart_version: "{{ efbk_chart_version }}"
+    atomic: "{{ efbk_helm_atomic|ternary('yes', 'no') }}"
+    wait: true
+    wait_timeout: "{{ efbk_helm_timeout|d(omit) }}"
+  environment: "{{ efbk_helm_environment }}"
+  when: '"filebeat" in efbk_install_components'
+...

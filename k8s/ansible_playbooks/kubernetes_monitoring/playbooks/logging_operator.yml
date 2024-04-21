@@ -1,0 +1,10 @@
+---
+- name: Apply roles for Kubernetes cluster tuning
+  hosts: localhost
+  gather_facts: false
+
+  tasks:
+    - name: Install Banzai Cloud Logging Operator
+      import_role:
+        name: logging_operator
+...

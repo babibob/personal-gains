@@ -1,0 +1,21 @@
+---
+- name: Check role requirements
+  assert:
+    that:
+      - prom_stack_adapter_chart_version|length > 0
+
+- name: Install prometheus-adapter Helm chart release
+  kubernetes.core.helm:
+    name: "{{ prom_stack_adapter_helm_release_name }}"
+    chart_ref: prometheus-community/prometheus-adapter
+    release_namespace: "{{ prom_stack_namespace.name|d(prom_stack_default_namespace) }}"
+    release_values: >-
+      {{ prom_stack_adapter_default_values
+      |combine(prom_stack_adapter_values, recursive=True)
+      |combine(prom_stack_adapter_values_extra, recursive=True) }}
+    chart_version: "{{ prom_stack_adapter_chart_version }}"
+    atomic: "{{ prom_stack_helm_atomic|ternary('yes', 'no') }}"
+    skip_crds: true
+    wait: true
+  environment: "{{ prom_stack_helm_environment }}"
+...

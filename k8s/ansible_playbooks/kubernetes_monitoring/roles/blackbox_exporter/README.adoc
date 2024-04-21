@@ -1,0 +1,29 @@
+---
+
+= blackbox_exporter
+
+:toc: auto
+:source-language: yaml
+
+Deploy blackbox_exporter to Kubernetes cluster
+
+== Requirements
+
+* *gather_facts:* `false`
+
+== Role Variables
+
+[source]
+----
+blackbox_exporter_chart_version: string # e.q. "5.8.1"
+blackbox_exporter_version: string # e.q. "0.20.0"
+blackbox_exporter_config: string
+blackbox_exporter_namespace: string # e.q. "monitoring"
+blackbox_exporter_values: dict
+blackbox_exporter_values_extra: dict
+----
+
+
+See default values in link:defaults/main.yml[defaults/main.yml].
+
+// END

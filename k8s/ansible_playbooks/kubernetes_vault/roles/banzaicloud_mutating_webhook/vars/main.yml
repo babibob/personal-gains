@@ -1,0 +1,12 @@
+---
+bcmw_default_namespace: vault-secrets-webhook
+
+bcmw_default_values:
+  resources:
+    limits:
+      cpu: 500m
+      memory: 512Mi
+    requests:
+      cpu: 200m
+      memory: 384Mi
+...

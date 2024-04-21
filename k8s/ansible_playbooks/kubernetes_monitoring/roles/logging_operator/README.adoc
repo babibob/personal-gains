@@ -1,0 +1,83 @@
+= logging_operator
+:toc: auto
+:source-language: yaml
+
+Deploy *kube-logging/logging-operator* link:https://kube-logging.dev/docs/[BanzaiCloud logging operator] with CRD chart
+See default link:https://github.com/kube-logging/helm-charts/tree/main/charts/logging-operator[values on GitHub].
+
+== Requirements
+
+* *gather_facts:* `false`
+* *Installed collections:*
+** kubernetes.core
+
+=== GitLab CI
+
+Setup cache path
+
+[source]
+----
+logging_operator_helm_environment:
+  HELM_CACHE_HOME: "{{ lookup('env', 'CI_PROJECT_DIR') }}/.helm/cache"
+  HELM_CONFIG_HOME: "{{ lookup('env', 'CI_PROJECT_DIR') }}/.helm/config"
+----
+
+[source]
+----
+.ansible_job_template:
+  cache:
+    key: $CIRCUIT
+    paths:
+      - .helm/
+      - ansible_downloads/
+----
+
+== Role Variables
+
+[source]
+----
+logging_operator_chart_version: string             # e.q. "4.2.3"
+logging_operator_logging_chart_version: string     # e.q. "4.2.0" CRD chart version
+
+logging_operator_helm_atomic: bool                 # default is true
+logging_operator_helm_environment: object          # environment variables passed to Helm
+logging_operator_helm_release_name: string         # default is "logging-operator"
+
+logging_operator_chart_repo: string                # original or mirror, install chart from original or soutbridge mirror repo
+
+logging_operator_namespace:
+  name: string  # default is 'monitoring'
+  create: bool   # default is true
+  labels: object  # default is {}
+
+logging_operator_values: object                    # Custom values
+logging_operator_values_extra: object              # Custom values (more priority than logging_operator_values)
+
+logging_operator_logging_enable: bool              # default is false - install CRD from chart
+logging_operator_logging_helm_release_name: string # default is "logging-operator-logging"
+logging_operator_logging_values: object            # Custom values for CRD chart
+logging_operator_logging_values_extra: object      # Custom values (more priority than logging_operator_logging_values) for CRD chart
+----
+
+See default values in link:vars/main.yml[vars/main.yml].
+
+== Dependencies
+
+None
+
+== Example Inventory
+
+Included from file via `lookup()` ansible functions:
+
+See link:example-inventory[example inventory]
+
+== Example Playbook
+
+See link:tests/antest/site.yml[test site.yml].
+
+
+== Example Variables
+
+See link:tests/antest/inventory/hosts.yml[test hosts.yml]
+
+// END

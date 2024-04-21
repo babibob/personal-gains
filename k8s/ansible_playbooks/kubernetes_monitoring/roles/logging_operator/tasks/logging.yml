@@ -1,0 +1,16 @@
+---
+- name: Install logging-operator-logging Helm chart release
+  kubernetes.core.helm:
+    name: "{{ logging_operator_logging_helm_release_name }}"
+    chart_ref: kube-logging/logging-operator-logging
+    release_namespace: "{{ logging_operator_namespace.name|d(logging_operator_default_namespace) }}"
+    release_values: >-
+      {{ logging_operator_logging_default_values
+      |combine(logging_operator_logging_values, recursive=True)
+      |combine(logging_operator_logging_values_extra, recursive=True) }}
+    chart_version: "{{ logging_operator_logging_chart_version }}"
+    atomic: "{{ logging_operator_helm_atomic|ternary('yes', 'no') }}"
+    skip_crds: true
+    wait: true
+  environment: "{{ logging_operator_helm_environment }}"
+...

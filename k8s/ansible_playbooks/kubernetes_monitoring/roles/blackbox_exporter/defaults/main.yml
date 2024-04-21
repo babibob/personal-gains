@@ -1,0 +1,7 @@
+---
+blackbox_exporter_chart_version: 5.8.1
+blackbox_exporter_namespace: monitoring
+
+blackbox_exporter_values: {}
+blackbox_exporter_values_extra: {}
+...

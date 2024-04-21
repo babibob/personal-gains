@@ -1,0 +1,10 @@
+---
+- name: Apply roles for Kubernetes cluster tuning
+  hosts: localhost
+  gather_facts: false
+
+  tasks:
+    - name: Install Elastic/Filebeat/Kibana
+      import_role:
+        name: efbk_stack
+...

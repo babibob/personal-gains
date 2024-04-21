@@ -1,0 +1,17 @@
+---
+__global__debug: false
+
+__global__helm_environment:
+  HELM_CACHE_HOME: "{{ lookup('env', 'CI_PROJECT_DIR') }}/.helm/cache"
+  HELM_CONFIG_HOME: "{{ lookup('env', 'CI_PROJECT_DIR') }}/.helm/config"
+
+__global__helm_atomic: false
+__global__helm_recovery_pending_install: true
+
+__vault__url: https://vault.internal.example.com
+
+__vault__prom_stack: >-
+  {{ lookup('community.hashi_vault.hashi_vault',
+  'url=' ~ __vault__url ~ '
+  secret=infra/data/prom_stack') }}
+...

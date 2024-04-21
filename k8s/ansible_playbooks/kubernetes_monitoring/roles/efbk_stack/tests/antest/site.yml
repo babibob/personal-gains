@@ -1,0 +1,8 @@
+---
+- name: Local role testing
+  hosts: localhost
+  gather_facts: false
+
+  roles:
+    - efbk
+...

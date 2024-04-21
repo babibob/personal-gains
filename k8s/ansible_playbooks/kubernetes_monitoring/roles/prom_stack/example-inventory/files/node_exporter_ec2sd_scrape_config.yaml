@@ -1,0 +1,26 @@
+- job_name: node_exporter
+  ec2_sd_configs:
+  - region: us-west-1
+    port: 9100
+    refresh_interval: 1m
+    filters:
+      - name: instance-state-name
+        values:
+          - running
+      - name: tag:Name
+        values:
+          - gitlab
+          - adminbox-runner
+          - vault-1
+          - vault-2
+          - vault-3
+          - yp-common-sentry-instance
+#      - name: tag-key
+#        values:
+#          - Name
+  relabel_configs:
+  - source_labels: ['__meta_ec2_tag_Name', '__meta_ec2_private_ip']
+    separator: ':'
+    target_label: instance
+  - source_labels: ['__meta_ec2_instance_type']
+    target_label: instance_type

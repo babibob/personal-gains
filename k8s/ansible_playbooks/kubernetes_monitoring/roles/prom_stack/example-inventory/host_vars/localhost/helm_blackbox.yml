@@ -1,0 +1,8 @@
+---
+blackbox_exporter_values:
+  nodeSelector:
+    infrastructure: "enable"
+  tolerations:
+    - key: infrastructure_node
+      operator: Exists
+...

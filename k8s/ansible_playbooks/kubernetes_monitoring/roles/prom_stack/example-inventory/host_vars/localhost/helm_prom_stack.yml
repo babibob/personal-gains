@@ -1,0 +1,137 @@
+---
+prom_stack_chart_version: 46.8.0
+prom_stack_helm_atomic: "{{ __global__helm_atomic }}"
+prom_stack_helm_environment: "{{ __global__helm_environment }}"
+# prom_stack_tls_certificate_issuer: letsencrypt
+
+# prom_stack_alertmanager_config_secret_name: alertmanager-config
+
+prom_stack_prometheus_adapter_enable: true
+
+prom_stack_values:
+  additionalPrometheusRulesMap:
+    blackbox-exporter-rules: "{{ lookup('file', inventory_dir~'/files/blackbox_exporter_rules.yaml') | from_yaml }}"
+    node-exporter-rules: "{{ lookup('file', inventory_dir~'/files/node_exporter_rules.yaml') | from_yaml }}"
+  defaultRules:
+    create: true
+    rules:
+      alertmanager: true
+      etcd: true
+      configReloaders: true
+      general: true
+      k8s: true
+      kubeApiserver: true
+      kubeApiserverAvailability: true
+      kubeApiserverSlos: true
+      kubelet: true
+      kubeProxy: true
+      kubePrometheusGeneral: true
+      kubePrometheusNodeRecording: true
+      kubernetesApps: true
+      kubernetesResources: true
+      kubernetesStorage: true
+      kubernetesSystem: true
+      kubeScheduler: true
+      kubeStateMetrics: true
+      network: true
+      node: true
+      nodeExporterAlerting: true
+      nodeExporterRecording: true
+      prometheus: true
+      prometheusOperator: true
+  kubeControllerManager:
+    enabled: true
+  alertmanager:
+    ingress:
+      enabled: true
+      ingressClassName: nginx
+      hosts:
+        - alertmanager.internal.example.com
+      pathType: Prefix
+    # config and template files set from existing secret due current Prometheus operator not support telegram reciver config
+    config: "{{ lookup('template', inventory_dir~'/templates/alertmanager.yaml.j2') | from_yaml }}"
+    templateFiles:
+      telegram.tmpl: "{{ lookup('file', inventory_dir~'/files/telegram.tmpl') }}"
+    alertmanagerSpec:
+      logLevel: debug
+      nodeSelector:
+        infrastructure: "enable"
+      podAntiAffinity: hard
+      tolerations:
+        - key: infrastructure_node
+          operator: Exists
+      storage:
+        volumeClaimTemplate:
+          spec:
+            accessModes: ["ReadWriteOnce"]
+            resources:
+              requests:
+                storage: 200Mi
+  grafana:
+    adminPassword: "{{ __vault__prom_stack['grafana_admin_password'] }}"
+    persistence:
+      enabled: true
+    ingress:
+      enabled: true
+      ingressClassName: nginx
+      hosts:
+        - grafana.internal.example.com
+      pathType: Prefix
+    nodeSelector:
+      infrastructure: "enable"
+    tolerations:
+      - key: infrastructure_node
+        operator: Exists
+    grafana.ini:
+      server:
+        root_url: https://grafana.internal.example.com/
+  prometheus:
+    ingress:
+      enabled: true
+      ingressClassName: nginx
+      hosts:
+        - prometheus.internal.example.com
+      pathType: Prefix
+    prometheusSpec:
+      externalLabels:
+        cluster: Prestable
+      additionalScrapeConfigs: >
+        {{ lookup('file', inventory_dir~'/files/blackbox_scrape_config.yaml') | from_yaml +
+           lookup('file', inventory_dir~'/files/node_exporter_ec2sd_scrape_config.yaml') | from_yaml
+        }}
+      retention: "3d"
+      nodeSelector:
+        infrastructure: "enable"
+      podAntiAffinity: hard
+      tolerations:
+        - key: infrastructure_node
+          operator: Exists
+      storageSpec:
+        volumeClaimTemplate:
+          spec:
+            accessModes: ["ReadWriteOnce"]
+            resources:
+              requests:
+                storage: 20Gi
+  prometheus-node-exporter:
+    resources:
+      limits:
+        cpu: 200m
+        memory: 128Mi
+      requests:
+        cpu: 50m
+        memory: 64Mi
+  prometheusOperator:
+    nodeSelector:
+      infrastructure: "enable"
+    tolerations:
+      - key: infrastructure_node
+        operator: Exists
+
+prom_stack_adapter_values:
+  nodeSelector:
+    infrastructure: "enable"
+  tolerations:
+    - key: infrastructure_node
+      operator: Exists
+...

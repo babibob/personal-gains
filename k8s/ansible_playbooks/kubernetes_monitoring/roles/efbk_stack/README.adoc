@@ -1,0 +1,100 @@
+= EFbK
+:toc: auto
+:source-language: yaml
+
+Deploy lightweight Elastic log analyzer suite: *elastic/elasticsearch, filebeat, kibana* and *lebenitza/elasticsearch-curator* Helm charts.
+
+Maximum version of Elasticsearch, Kibana and Filebeat is 8.5.1.
+If Elasticsearch version is greate than 7.x - do not use elasticsearch curator for clean index.
+Use https://www.elastic.co/guide/en/beats/filebeat/current/ilm.html[index lifecycle managment]
+
+For newer versions, use the operator link:https://artifacthub.io/packages/helm/elastic/eck-operator[eck-operator]
+
+.See default values on GitHub:
+* https://github.com/elastic/helm-charts/blob/master/elasticsearch/values.yaml[elasticsearch]
+* https://github.com/elastic/helm-charts/blob/master/filebeat/values.yaml[filebeat]
+* https://github.com/elastic/helm-charts/blob/master/kibana/values.yaml[kibana]
+* https://github.com/lebenitza/charts/blob/main/charts/elasticsearch-curator/values.yaml[elasticsearch-curator]
+
+== Requirements
+
+* *gather_facts:* `false`
+* *Installed collections:*
+** kubernetes.core
+
+=== GitLab CI
+
+Setup cache path
+
+[source]
+----
+efbk_helm_environment:
+  HELM_CACHE_HOME: "{{ lookup('env', 'CI_PROJECT_DIR') }}/.helm/cache"
+  HELM_CONFIG_HOME: "{{ lookup('env', 'CI_PROJECT_DIR') }}/.helm/config"
+----
+
+[source]
+----
+.ansible_job_template:
+  cache:
+    key: $CIRCUIT
+    paths:
+      - .helm/
+----
+
+== Role Variables
+
+[source]
+----
+efbk_chart_version: string  # e.q. "8.5.1"
+efbk_curator_chart_version: string  # e.q. "3.2.3"
+
+efbk_install_components: list  # choose from elasticsearch, filebeat, kibana, elasticsearch-curator
+
+efbk_maximum_log_age: string   # create ilm policy to remove old filebeat index
+efbk_maximum_shard_size: string # Rollover index size
+
+efbk_helm_atomic: bool  # default is true
+efbk_helm_environment: object  # environment variables passed to Helm
+efbk_helm_timeout: string  # timeout when wait option is enabled; default is omitted
+
+efbk_elasticsearch_helm_release_name: string  # default is "elasticsearch"
+efbk_filebeat_helm_release_name: string  # default is "filebeat"
+efbk_kibana_helm_release_name: string  # default is "kibana"
+efbk_curator_helm_release_name: string  # default is "curator"
+
+efbk_namespace:
+  name: string  # default is 'efbk-system'
+  create: bool   # default is false
+  labels: object  # default is {}
+
+efbk_elasticsearch_values: object  # Custom values for ElasticSearch
+efbk_elasticsearch_values_extra: object  # Custom values (more priority than efbk_elasticsearch_values)
+
+efbk_filebeat_values: object  # Custom values for Filebeat
+efbk_filebeat_values_extra: object  # Custom values (more priority than efbk_filebeat_values)
+
+efbk_kibana_values: object  # Custom values for Kibana
+efbk_kibana_values_extra: object  # Custom values (more priority than efbk_kibana_values)
+
+efbk_kibana_tls_certificate_issuer: string  # e.q. 'letsencrypt'; default is undefined.
+
+efbk_curator_values: object  # Custom values for elasticsearch-curator
+efbk_curator_values_extra: object  # Custom values (more priority than efbk_curator_values)
+----
+
+See default values in link:vars/main.yml[vars/main.yml].
+
+== Dependencies
+
+None
+
+== Example Playbook
+
+See link:tests/antest/site.yml[test site.yml].
+
+== Example Variables
+
+See link:tests/antest/inventory/hosts.yml[test hosts.yml]
+
+// END

@@ -1,0 +1,10 @@
+---
+logging_operator_default_namespace: logging-operator
+
+logging_operator_default_values: {}
+
+logging_operator_dirs:
+  downloads: "{{ lookup('env', 'PWD') }}/ansible_downloads/{{ role_name }}"
+
+logging_operator_logging_default_values: {}
+...

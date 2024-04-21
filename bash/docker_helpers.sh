@@ -39,3 +39,9 @@ export VERSION="8.0.29"
 export IMAGE_NAME="mysql"
 echo "FROM ${IMAGE_NAME}:${VERSION}" > Dockerfile.${IMAGE_NAME}
 docker build --no-cache --tag "${IMAGE_NAME}:${VERSION}" --file Dockerfile.${IMAGE_NAME} .
+
+# Restart an existing container after it exited
+# 1. restart it in the background
+docker start  `docker ps -q -l`
+# 2. reattach the terminal & stdin
+docker attach `docker ps -q -l`

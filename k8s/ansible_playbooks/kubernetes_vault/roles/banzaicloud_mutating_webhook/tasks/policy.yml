@@ -1,0 +1,78 @@
+---
+- name: "Read policy {{ bcmw_policy_prefix }}-{{ engine['kv'] }}"
+  command:
+    argv:
+      - vault
+      - policy
+      - read
+      - -format=yaml
+      - "{{ bcmw_policy_prefix }}-{{ engine['kv'] }}"
+  register: __bcmw_read_policy
+  changed_when: false
+  failed_when:
+    - __bcmw_read_policy is failed
+    - __bcmw_read_policy['stderr'] is not search('No policy named')
+
+- name: Make fact from received policy
+  set_fact:
+    _bcmw_received_policy: "{{ __bcmw_read_policy['stdout']|from_yaml }}"
+
+- name: Print received policy
+  debug:
+    msg: "{{ _bcmw_received_policy['policy']|d('') }}"
+
+- name: Print defined policy
+  debug:
+    msg: "{{ bcmw_policy }}"
+
+- name: Write policy if not exists
+  when: _bcmw_received_policy['policy']|d('')|to_json != bcmw_policy|to_json
+  block:
+    - name: Create tempfile for policy body
+      tempfile:
+        state: file
+        suffix: .hcl
+      register: __bcmw_policy_tempfile
+
+    - name: Write policy into tempfile
+      copy:
+        dest: "{{ __bcmw_policy_tempfile['path'] }}"
+        mode: "0600"
+        content: |
+          {{ bcmw_policy }}
+
+    - name: Check policy file syntax
+      command:
+        argv:
+          - vault
+          - policy
+          - fmt
+          - "{{ __bcmw_policy_tempfile['path'] }}"
+      changed_when: false
+      register: __bcmw_policy_fmt
+
+    - name: Print policy fmt result
+      debug:
+        msg: "{{ __bcmw_policy_fmt['stdout'] }}"
+      changed_when: true
+
+    - name: Write policy  # noqa no-changed-when
+      command:
+        argv:
+          - vault
+          - policy
+          - write
+          - "{{ bcmw_policy_prefix }}-{{ engine['kv'] }}"
+          - "{{ __bcmw_policy_tempfile['path'] }}"
+      register: __bcmw_policy_write
+
+    - name: Print policy write result
+      debug:
+        msg: "{{ __bcmw_policy_write['stdout'] }}"
+      changed_when: true
+  always:
+    - name: Remove tempfile
+      file:
+        path: "{{ __bcmw_policy_tempfile['path'] }}"
+        state: absent
+...

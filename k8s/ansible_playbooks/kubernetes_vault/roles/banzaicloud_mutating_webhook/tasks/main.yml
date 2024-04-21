@@ -1,0 +1,39 @@
+---
+- name: Check role requirements
+  assert:
+    that:
+      - bcmw_chart_version|length > 0
+
+- name: Set URL for chart repo
+  include_vars: "{{ bcmv_chart_repo }}_chart_repo.yml"
+
+- name: Setup banzaicloud-stable Helm repo
+  kubernetes.core.helm_repository:
+    name: banzaicloud-stable
+    repo_url: "{{ bcmv_chart_repo_url }}"
+  environment: "{{ bcmw_helm_environment }}"
+
+- name: Create namespace for vault-secrets-webhook
+  kubernetes.core.k8s:
+    api_version: v1
+    kind: Namespace
+    name: >-
+      {{ bcmw_namespace.name|d(bcmw_default_namespace) }}
+    resource_definition:
+      metadata:
+        labels: "{{ bcmw_namespace.labels|d({}) }}"
+  when: bcmw_namespace.create|d(true)
+
+- name: Deploy vault-secrets-webhook Helm chart release
+  kubernetes.core.helm:
+    name: "{{ bcmw_helm_release_name }}"
+    chart_ref: banzaicloud-stable/vault-secrets-webhook
+    release_namespace: >-
+      {{ bcmw_namespace.name|d(bcmw_default_namespace) }}
+    release_values: >-
+      {{ bcmw_default_values|combine(bcmw_values, recursive=True) }}
+    chart_version: "{{ bcmw_chart_version }}"
+    atomic: "{{ bcmw_helm_atomic|ternary('yes', 'no') }}"
+    wait: true
+  environment: "{{ bcmw_helm_environment }}"
+...

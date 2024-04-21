@@ -1,0 +1,10 @@
+---
+- name: Apply roles for Kubernetes cluster tuning
+  hosts: localhost
+  gather_facts: false
+
+  tasks:
+    - name: Install prometheus
+      import_role:
+        name: prom_stack
+...

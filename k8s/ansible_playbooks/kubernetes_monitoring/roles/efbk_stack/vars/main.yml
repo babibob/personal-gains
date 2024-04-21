@@ -1,0 +1,18 @@
+---
+efbk_default_namespace: efbk-system
+
+efbk_elasticsearch_default_values: {}
+efbk_filebeat_default_values: {}
+efbk_kibana_default_values: {}
+
+efbk_curator_default_values:
+  cronjob:
+    schedule: "*/10 * * * *"
+  resources:
+    limits:
+      cpu: 250m
+      memory: 128Mi
+    requests:
+      cpu: 50m
+      memory: 128Mi
+...

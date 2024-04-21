@@ -1,0 +1,19 @@
+---
+- name: blackbox_exporter | Setup prometheus-community Helm repo
+  kubernetes.core.helm_repository:
+    name: prometheus-community
+    repo_url: https://prometheus-community.github.io/helm-charts
+
+- name: blackbox_exporter | Install prometheus-blackbox-exporter Helm chart
+  kubernetes.core.helm:
+    name: prometheus-blackbox-exporter
+    chart_ref: prometheus-community/prometheus-blackbox-exporter
+    release_namespace: "{{ blackbox_exporter_namespace|d(blackbox_exporter_default_namespace) }}"
+    chart_version: "{{ blackbox_exporter_chart_version }}"
+    release_values: >-
+      {{ blackbox_exporter_default_values
+      |combine(blackbox_exporter_values, recursive=True)
+      |combine(blackbox_exporter_values_extra, recursive=True) }}
+    wait: true
+    wait_timeout: 400s
+...

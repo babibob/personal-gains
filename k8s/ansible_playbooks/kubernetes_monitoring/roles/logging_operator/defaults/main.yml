@@ -1,0 +1,16 @@
+---
+logging_operator_chart_version: "4.2.3"
+logging_operator_logging_chart_version: "4.2.0"
+logging_operator_helm_atomic: true
+logging_operator_helm_environment: {}
+logging_operator_helm_release_name: logging-operator
+logging_operator_chart_repo: original
+
+logging_operator_values: {}
+logging_operator_values_extra: {}
+
+logging_operator_logging_enable: false
+logging_operator_logging_helm_release_name: logging-operator-logging
+logging_operator_logging_values: {}
+logging_operator_logging_values_extra: {}
+...

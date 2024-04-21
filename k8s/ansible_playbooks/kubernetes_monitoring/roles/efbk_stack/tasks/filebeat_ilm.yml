@@ -1,0 +1,26 @@
+---
+- name: Create configmap with ilm policy
+  kubernetes.core.k8s:
+    api_version: v1
+    kind: ConfigMap
+    namespace: "{{ efbk_namespace.name|d(efbk_default_namespace) }}"
+    name: "filebeat-ilm-policy"
+    resource_definition:
+      data:
+        ilm_policy.json: "{{ lookup('template','filebeat_ilm_policy.json.j2') | string }}"
+
+- name: Set default values for filebeat charts
+  set_fact:
+    _efbk_filebeat_ilm_policy_values:
+      extraVolumes:
+        - name: filebeat-ilm-policy
+          configMap:
+            defaultMode: 384
+            name: filebeat-ilm-policy
+      extraVolumeMounts:
+        - mountPath: /usr/share/filebeat/ilm_policy.json
+          name: filebeat-ilm-policy
+          readOnly: true
+          subPath: ilm_policy.json
+
+...

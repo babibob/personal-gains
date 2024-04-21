@@ -1,0 +1,67 @@
+# This builds the silence URL.  We exclude the alertname in the range
+# to avoid the issue of having trailing comma separator (%2C) at the end
+# of the generated URL
+{{ define "__alert_silence_link" -}}
+    /#/silences/new?filter=%7B
+    {{- range .Labels.SortedPairs -}}
+        {{- if ne .Name "alertname" -}}
+            {{- .Name }}%3D&quot;{{- .Value -}}&quot;%2C%20
+        {{- end -}}
+    {{- end -}}
+    alertname%3D&quot;{{ .Labels.alertname }}&quot;%7D
+{{- end }}
+
+{{ define "__alert_severity_prefix" -}}
+    {{ if ne .Status "firing" -}}
+    ✅
+    {{- else if eq .Labels.severity "critical" -}}
+    🔥
+    {{- else if eq .Labels.severity "warning" -}}
+    ⚠
+    {{- else if eq .Labels.severity "info" -}}
+    ℹ
+    {{- else -}}
+    ❓
+    {{- end }}
+{{- end }}
+
+{{ define "__alert_print" -}}
+{{ template "__alert_severity_prefix" . }} <b>{{ .Labels.alertname }}</b> {{ template "__alert_severity_prefix" . }}
+{{- if .Labels.instance }}
+<i>Instance:</i> {{ .Labels.instance }}
+{{- end }}
+{{- if .Labels.namespace }}
+<i>Namespace:</i> {{ .Labels.namespace }}
+{{- end }}
+{{- if .Labels.pod }}
+<i>Pod:</i> {{ .Labels.pod }}
+{{- end }}
+{{- if .Labels.container }}
+<i>Container:</i> {{ .Labels.container }}
+{{- end }}
+{{- if .Labels.controller }}
+<i>Controller:</i> {{ .Labels.controller }}
+{{- end }}
+{{ .Annotations.description | reReplaceAll "&" "&amp;" | reReplaceAll "<" "&lt;" | reReplaceAll ">" "&gt;" }}
+{{- if .Annotations.summary }}
+{{ .Annotations.summary | reReplaceAll "&" "&amp;" | reReplaceAll "<" "&lt;" | reReplaceAll ">" "&gt;" }}
+{{- end }}
+<a href="{{ .GeneratorURL }}">Source</a>
+{{- end }}
+
+{{ define "telegram.message" }}
+<b>Prestable</b>
+{{- if gt (len .Alerts.Firing) 0 }}
+<b><a href="{{ .ExternalURL }}">Alerts Firing:</a> {{ .Alerts.Firing | len }}</b>
+{{- range .Alerts.Firing }}
+{{ template "__alert_print" . }}
+{{- end }}
+{{- end }}
+
+{{ if gt (len .Alerts.Resolved) 0 }}
+<b>Alerts Resolved: {{ .Alerts.Resolved | len }}</b>
+{{- range .Alerts.Resolved }}
+{{ template "__alert_print" . }}
+{{- end }}
+{{- end }}
+{{- end }}

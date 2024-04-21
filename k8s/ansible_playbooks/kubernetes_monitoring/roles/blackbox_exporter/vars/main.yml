@@ -1,0 +1,26 @@
+---
+blackbox_exporter_default_namespace: monitoring
+
+blackbox_exporter_default_values:
+  config:
+    modules:
+      http_2xx:
+        prober: http
+        timeout: 15s
+        http:
+          preferred_ip_protocol: ip4
+          follow_redirects: true
+      https_2xx:
+        prober: http
+        timeout: 15s
+        http:
+          preferred_ip_protocol: ip4
+          follow_redirects: true
+          fail_if_ssl: false
+          fail_if_not_ssl: true
+      tcp_tls_connect:
+        prober: tcp
+        timeout: 15s
+        tcp:
+          tls: true
+...

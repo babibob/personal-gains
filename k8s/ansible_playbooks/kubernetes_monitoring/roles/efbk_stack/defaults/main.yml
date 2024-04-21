@@ -1,0 +1,33 @@
+---
+efbk_chart_version: 8.5.1
+efbk_helm_atomic: true
+efbk_helm_environment: {}
+efbk_chart_repo: original
+
+efbk_install_components:
+  - elasticsearch
+  - filebeat
+  - kibana
+
+efbk_maximum_log_age: "7d"
+efbk_maximum_shard_size: "5g"
+
+efbk_curator_chart_version: 3.2.3
+
+efbk_elasticsearch_helm_release_name: elasticsearch
+efbk_filebeat_helm_release_name: filebeat
+efbk_kibana_helm_release_name: kibana
+efbk_curator_helm_release_name: curator
+
+efbk_elasticsearch_values: {}
+efbk_elasticsearch_values_extra: {}
+
+efbk_filebeat_values: {}
+efbk_filebeat_values_extra: {}
+
+efbk_kibana_values: {}
+efbk_kibana_values_extra: {}
+
+efbk_curator_values: {}
+efbk_curator_values_extra: {}
+...

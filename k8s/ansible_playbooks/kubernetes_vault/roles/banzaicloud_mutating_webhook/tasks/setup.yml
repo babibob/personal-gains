@@ -1,0 +1,207 @@
+---
+- name: Check required env vars
+  assert:
+    that:
+      - bcmw_vault_token|length > 0
+    msg: Requred environment variable VAULT_TOKEN not specified
+
+- name: Get kv list
+  command:
+    argv:
+      - vault
+      - secrets
+      - list
+  register: __bcmw_secrets_list
+  changed_when: false
+
+- name: Set _bcmw_secrets fact
+  set_fact:
+    _bcmw_secrets: >-
+      {{ __bcmw_secrets_list['stdout']
+      |from_json|dict2items|map(attribute='key')|list }}
+
+- name: Print existing secrets
+  debug:
+    msg: "{{ _bcmw_secrets }}"
+
+- name: Enable secrets if not exists
+  when: item['kv'] ~ '/' not in _bcmw_secrets
+  command:
+    argv:
+      - vault
+      - secrets
+      - enable
+      - "-path={{ item['kv'] }}"
+      - -version=2
+      - kv
+  register: __bcmw_create_kv
+  loop: "{{ bcmw_kv_ns_collate }}"
+  loop_control:
+    label: "{{ item['kv'] }}"
+
+- name: Print enabled secrets  # noqa no-handler
+  when: item['changed']
+  debug:
+    msg: "{{ item['stdout'] }}"
+  loop: "{{ __bcmw_create_kv['results'] }}"
+  loop_control:
+    label: "{{ item['item']['kv'] }}"
+  changed_when: true
+
+- name: Get auth list
+  command:
+    argv:
+      - vault
+      - auth
+      - list
+  changed_when: false
+  register: __bcmw_auth_list
+
+- name: Set _bcmw_auths fact
+  set_fact:
+    _bcmw_auths: >-
+      {{ __bcmw_auth_list['stdout']
+      |from_json|dict2items|map(attribute='key')|list }}
+
+- name: Print existing auths
+  debug:
+    msg: "{{ _bcmw_auths }}"
+
+- name: Create auth method
+  when: bcmw_auth_method_name ~ '/' not in _bcmw_auths
+  command:
+    argv:
+      - vault
+      - auth
+      - enable
+      - "-path={{ bcmw_auth_method_name }}"
+      - kubernetes
+  register: __bcmw_enable_auth
+
+- name: Print created auth method  # noqa no-handler
+  debug:
+    msg: "{{ __bcmw_enable_auth['stdout'] }}"
+  when: __bcmw_enable_auth['changed']
+  changed_when: true
+
+- name: Create namespace for delegator serviceaccount
+  kubernetes.core.k8s:
+    api_version: v1
+    kind: Namespace
+    name: "{{ bcmw_delegator_sa_namespace }}"
+    context: "{{ bcmw_kube_context|d(omit) }}"
+
+- name: Create delegator serviceaccount
+  kubernetes.core.k8s:
+    api_version: v1
+    kind: ServiceAccount
+    name: "{{ bcmw_delegator_sa_name }}"
+    namespace: "{{ bcmw_delegator_sa_namespace }}"
+    context: "{{ bcmw_kube_context|d(omit) }}"
+    wait: true
+
+- name: Create clusterrolebinding for delegator serviceaccount
+  kubernetes.core.k8s:
+    api_version: rbac.authorization.k8s.io/v1
+    kind: ClusterRoleBinding
+    name: "{{ bcmw_delegator_sa_name }}"
+    resource_definition:
+      roleRef:
+        apiGroup: rbac.authorization.k8s.io
+        kind: ClusterRole
+        name: system:auth-delegator
+      subjects:
+        - kind: ServiceAccount
+          name: "{{ bcmw_delegator_sa_name }}"
+          namespace: "{{ bcmw_delegator_sa_namespace }}"
+
+- name: Get delegator serviceaccount info
+  kubernetes.core.k8s_info:
+    api_version: v1
+    kind: ServiceAccount
+    name: "{{ bcmw_delegator_sa_name }}"
+    namespace: "{{ bcmw_delegator_sa_namespace }}"
+    context: "{{ bcmw_kube_context|d(omit) }}"
+  register: __bcmw_sa_info
+
+- name: Get delegator serviceaccount secret resource
+  kubernetes.core.k8s_info:
+    api_version: v1
+    kind: Secret
+    name: "{{ __bcmw_sa_info['resources'][0]['secrets'][0]['name'] }}"
+    namespace: "{{ bcmw_delegator_sa_namespace }}"
+    context: "{{ bcmw_kube_context|d(omit) }}"
+  register: __bcmw_sa_token
+
+- name: Try/always block
+  block:
+    - name: Create tempfile for certificate
+      tempfile:
+        state: file
+        suffix: .crt
+      register: __bcmw_ca
+      changed_when: false
+
+    - name: Write kube CA into tempfile
+      copy:
+        dest: "{{ __bcmw_ca['path'] }}"
+        content: |
+          {{ __bcmw_sa_token['resources'][0]['data']['ca.crt']|b64decode }}
+        mode: "0644"
+      changed_when: false
+
+    - name: Setup new auth for kube access
+      command:
+        argv:
+          - vault
+          - write
+          - "auth/{{ bcmw_auth_method_name }}/config"
+          - "token_reviewer_jwt={{ __bcmw_sa_token['resources'][0]['data']['token']|b64decode }}"
+          - "kubernetes_host={{ bcmw_kube_api_addr }}"
+          - "kubernetes_ca_cert=@{{ __bcmw_ca['path'] }}"
+          - "issuer={{ bcmw_auth_issuer }}"
+          - "disable_iss_validation={{ bcmw_auth_disable_iss_validation|string|lower }}"
+      register: __bcmw_setup_auth
+      changed_when: __bcmw_setup_auth.stdout|length > 0
+
+    - name: Print setup auth stdout
+      when: __bcmw_setup_auth is changed
+      debug:
+        msg: "{{ __bcmw_setup_auth['stdout'] }}"
+      changed_when: true
+  always:
+    - name: Delete ca tempfile
+      file:
+        path: "{{ __bcmw_ca['path'] }}"
+        state: absent
+      changed_when: false
+
+- name: Include policy.yml
+  include_tasks: policy.yml
+  loop: "{{ bcmw_kv_ns_collate }}"
+  loop_control:
+    loop_var: engine
+    label: "{{ engine['kv'] }}"
+
+- name: Write auth role for specified serviceaccount and namespaces
+  command:
+    argv:
+      - vault
+      - write
+      - "auth/{{ bcmw_auth_method_name }}/role/{{ item['kv'] }}"
+      - "bound_service_account_names={{ bcmw_access_sa_name }}"
+      - "bound_service_account_namespaces={{ item['ns']|join(',') }}"
+      - "policies={{ bcmw_policy_prefix }}-{{ item['kv'] }}"
+      - "ttl=1h"
+  register: __bcmw_write_role
+  changed_when: __bcmw_write_role['stdout']|length > 0
+  loop: "{{ bcmw_kv_ns_collate }}"
+
+- name: Print write role stdout  # noqa no-handler
+  when: item is changed
+  debug:
+    msg: "{{ item['stdout'] }}"
+  loop: "{{ __bcmw_write_role['results'] }}"
+  loop_control:
+    label: "{{ item['item']['kv'] }}"
+...

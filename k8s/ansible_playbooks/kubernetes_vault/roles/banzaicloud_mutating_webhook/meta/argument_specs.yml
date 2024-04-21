@@ -1,0 +1,100 @@
+---
+argument_specs:
+  main:
+    short_description: The main entry point for the banzaicloud_mutating_webhook role.
+    options:
+      bcmw_chart_version:
+        type: str
+        default: "1.15.8"
+      bcmw_helm_atomic:
+        type: bool
+        default: true
+      bcmw_helm_environment:
+        type: dict
+        description: Environment variables passed to helm
+      bcmw_helm_release_name:
+        type: str
+        default: "vault-secrets-webhook"
+      bcmw_namespace:
+        type: dict
+        description: K8s namespace will be created for helm chart deploy
+        options:
+          name:
+            type: str
+            default: "vault-secrets-webhook"
+          create:
+            type: bool
+            default: true
+            description: Create or not this namespace
+          labels:
+            type: dict
+      bcmw_values:
+        type: dict
+        description: Additional values for helm chart
+  setup.yml:
+    # TODO: remove extension after fixing https://github.com/ansible/ansible/issues/77625
+    short_description: The setup entry point for the banzaicloud_mutating_webhook role.
+    options:
+      bcmw_access_sa_name:
+        type: str
+        description: ServiceAccount that have access to a records in specified kv secret (see bcmw_kv_ns_collate). If set to "*" all names are allowed.
+        default: "*"
+      bcmw_auth_issuer:
+        type: str
+        default: kubernetes.default.svc
+      bcmw_auth_disable_iss_validation:
+        type: bool
+        default: false
+      bcmw_auth_method_name:
+        type: str
+        description: Name for kubernetes auth method
+        default: "kubernetes-staging"
+      bcmw_delegator_sa_name:
+        type: str
+        description: Webhook delegator ServiceAccount name
+        default: "vault-auth-delegator"
+      bcmw_delegator_sa_namespace:
+        type: str
+        description: Namespace for delegator ServiceAccount
+        default: "users-system"
+      bcmw_kube_api_addr:
+        type: str
+        description: K8s API address as viewed from Vault instance
+        required: true
+      bcmw_kube_context:
+        type: str
+        description: K8s context
+        default: not specified.
+      bcmw_kv_ns_collate:
+        type: list
+        elements: dict
+        required: true
+        description: Vault KVs and the k8s namespaces collation
+        options:
+          kv:
+            type: str
+            description: KV name
+          ns:
+            type: list
+            elements: str
+            description: List of namespaces that have access to this KV
+          mode:
+            type: str
+            choices:
+              - ro
+              - rw
+            description: Access mode
+            default: "ro"
+      bcmw_policy_prefix:
+        type: str
+        description: Webhook policy prefix
+        default: ansible-webhook
+      bcmw_vault_addr:
+        type: str
+        required: true
+        description: Vault address as seen from control host
+      bcmw_vault_token:
+        type: str
+        required: true
+        description: Vault access token
+...

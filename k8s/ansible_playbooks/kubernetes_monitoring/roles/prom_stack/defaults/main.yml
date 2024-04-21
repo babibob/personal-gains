@@ -1,0 +1,18 @@
+---
+prom_stack_chart_version: "46.8.0"
+prom_stack_helm_atomic: true
+prom_stack_helm_environment: {}
+prom_stack_helm_release_name: prometheus-stack
+prom_stack_chart_repo: original
+
+prom_stack_adapter_helm_release_name: prometheus-adapter
+prom_stack_adapter_chart_version: "4.2.0"
+
+prom_stack_adapter_enable: true  # install prometheus adapter with kube metrics API rules
+
+prom_stack_values: {}
+prom_stack_values_extra: {}
+
+prom_stack_adapter_values: {}
+prom_stack_adapter_values_extra: {}
+...
