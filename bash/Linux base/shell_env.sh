@@ -22,4 +22,4 @@ last -i
 journalctl -t sshd -b0 -r
 
 # Generate ssh keys with comment
-ssh-keygen -t ed25519 -C "user.name@g5e.com"
+ssh-keygen -t ed25519 -C "user.name@email.com"

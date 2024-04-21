@@ -1,4 +1,4 @@
-= southbridge.kubernetes_vault.banzaicloud_mutating_webhook
+= banzaicloud_mutating_webhook
 :toc: auto
 :source-language: yaml
 

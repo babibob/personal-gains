@@ -1,9 +1,6 @@
 #!/bin/bash
 set -u
 #
-# file: https://galaxy.southbridge.io/templates/antools/-/blob/master/scripts/hooklog.sh
-# version: 0.1.0
-#
 # Use this script with Helm pre-rollback hook for logs and events printing.
 #
 

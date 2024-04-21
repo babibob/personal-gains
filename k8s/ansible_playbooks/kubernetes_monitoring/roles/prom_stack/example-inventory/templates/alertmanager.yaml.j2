@@ -63,7 +63,7 @@ receivers:
         message: '{{ "{{" }} template "telegram.message" . {{ "}}" }}'
   - name: 'sb_redmine'
     webhook_configs:
-    - url: https://factory.southbridge.io/redmine_bridge/webhook
+    - url: https://<URL>
       http_config:
         bearer_token: {{ __vault__prom_stack['sb_factory_token'] }}
 templates:

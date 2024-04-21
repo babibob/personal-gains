@@ -1,7 +1,6 @@
 #!/bin/bash
 #
 # etcd backup script
-# Southbridge LLC, 2018 A.D.
 #
 # set -x
 set -o nounset
