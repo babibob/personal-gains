@@ -1,11 +1,12 @@
-wsl --version
-wsl --list
-wsl --import Ubuntu-22.04 D:\wsl\ D:\Ubuntu.tar
-wsl --unregister Ubuntu-22.04
-wsl --import Ubuntu-22.04 d:\wsl\Ubuntu-22.04 D:\Ubuntu.tar
-wsl --update
+# wsl --version
+# wsl --list
+# wsl --update
 
-wsl --list --online
+# wsl --import Ubuntu-22.04 D:\wsl\ D:\Ubuntu.tar
+# wsl --unregister Ubuntu-22.04
+# wsl --import Ubuntu-22.04 d:\wsl\Ubuntu-22.04 D:\Ubuntu.tar
+
+# wsl --list --online
 
 # Optimized wsl disk size
 wsl --shutdown
@@ -14,8 +15,8 @@ $VHDX_PATH = "C:\Users\$username\AppData\Local\Packages\CanonicalGroupLimited.Ub
 optimize-vhd -Path $VHDX_PATH\ext4.vhdx -Mode full
 
 # Create wsl backup
-mkdir D:\wsl
-wsl --export 'Ubuntu-22.04 (Default)' D:\Ubuntu.tar
+$WSL_BACKUP_PATH = "D:\Ubuntu.tar"
+wsl --export 'Ubuntu-22.04 (Default)' $WSL_BACKUP_PATH
 
 #Restore wsl from backup
 $WSL_BACKUP_PATH = "D:\Ubuntu.tar"
