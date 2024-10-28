@@ -7,6 +7,14 @@ redis-server --loglevel debug \
     --hash-max-ziplist-entries 2048 \
     --hash-max-ziplist-value 10000
 
+# Redis TTL Large Set of Keys
+redis-cli --scan --pattern "spribeBetCache::*" | \
+    while read LINE ; \
+        do TTL=`redis-cli ttl "$LINE"`; \
+            if [ $TTL -eq  -1 ]; then 
+                echo "$LINE"; redis-cli expire "$LINE" 129600; 
+            fi; 
+        done;
 
 # Create backup
 export FOLDER=$(date '+%y/%m/%d')
