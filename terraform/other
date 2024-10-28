@@ -1,0 +1,9 @@
+# при запуску з мак бука команди terraform init  (в прєктах, які використовують k8s = { version = "= 0.9.0" , source  = "banzaicloud/k8s" } випадає помилка
+# "...does not have a package available for your current platform, darwin_arm64."
+# Щоб її не було треба
+
+/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+brew install kreuzwerker/taps/m1-terraform-provider-helper
+m1-terraform-provider-helper activate
+m1-terraform-provider-helper install banzaicloud/k8s -v v0.9.0
+terraform init
