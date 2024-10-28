@@ -2,7 +2,7 @@
 
 #----#
 # History full clean
-cat /dev/null> ~ /.bash_history && history -c && exit
+cat /dev/null > ~ /.bash_history && history -c && exit
 
 # Messages about sshd from the last boot in the reverse order:
 journalctl -t sshd -b0 -r
