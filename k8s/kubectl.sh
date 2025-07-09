@@ -62,3 +62,14 @@ k get node -o jsonpath='{range .items[*]}{.metadata.name}{" "}{.status.allocatab
 for nodename in $(k get node | grep -v NAME -A 0 | awk '{print $1}'); \
     do str=$((str+1)) && echo $str && kubectl get node $nodename -o jsonpath='{range .status.allocatable}{.cpu}{" "}{.memory}{end}' && echo " $nodename";\
 done;
+
+
+k --context $CLUSTER -n $NS rollout pause deployment/$SERVICE
+k --context $CLUSTER -n $NS rollout status deployment/$SERVICE
+k --context $CLUSTER -n $NS rollout resume deployment/$SERVICE
+
+#Show value on rate limiter
+k --context $CLUSTER -n $NS get envoyfilters.networking.istio.io $FILTER_NAME -o yaml | grep -v "{\"" | grep token
+k --context $CLUSTER -n $NS get envoyfilter $FILTER_NAME -o jsonpath='{"max_tokens:"}{.spec.configPatches[0].patch.value.typed_config.value.token_bucket.max_tokens}{"\ntokens_per_fill:"}{.spec.configPatches[0].patch.value.typed_config.value.token_bucket.tokens_per_fill}{""}'
+#Change value on rate limiter
+k --context $CLUSTER -n $NS patch envoyfilter $FILTER_NAME --type='merge' -p '{"spec":{"configPatches":[{"patch":{"value":{"typed_config":{"value":{"token_bucket":{"max_tokens":0,"tokens_per_fill":0}}}}}}]}}'
