@@ -20,7 +20,7 @@ docker images | sort -k7 -h
 # Install docker
 curl -o - https://get.docker.com | bash -
 
-# Show docker compose files names and full path
+# Show names of docker-compose files and full path to them
 for c in `docker ps -q`; \
     do docker inspect $c --format '{{ .Config.Labels.containers | printf "%-30.30s"}} {{index .Config.Labels "com.docker.compose.project.config_files"}}' ; \
 done
