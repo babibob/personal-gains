@@ -7,13 +7,12 @@ ls | xargs -P10 -I{} git -C {} pull
 # Find gitlab project number for <NUMBER>
 for repo in $(curl -s --header "PRIVATE-TOKEN: <TOKEN>" https://URI/api/v4/groups/<NUMBER> | jq -r ".projects[].web_url"); do git clone $repo; done
 
-
 # Resolve git rebae troubles
-
-git checkout master ; \
+export BRANCH=master ; \
+git checkout ${BRANCH} ; \
 git pull ; \
 git checkout @{-1} ; \
-git merge $(git rev-parse master) ; \
+git merge $(git rev-parse ${BRANCH}) ; \
 git commit -am 'resolve conflict' ;  \
 git push origin HEAD
 
