@@ -1,3 +1,17 @@
+sudo su -
+su postgres
+
+BACKUP_FILE="template_name_$(date +%Y_%m_%d).full.gz"
+S3_BUCKET=s3://backup_backet_name
+
+export AWS_ACCESS_KEY_ID="XXXXXXXXXXXXXX"
+export AWS_SECRET_ACCESS_KEY="XXXXXXXXXXX"
+export AWS_SESSION_TOKEN="XXXXXXXXXXX"
+
+pg_dumpall | gzip > ${BACKUP_FILE}
+aws s3 cp "${BACKUP_FILE}" "${S3_BUCKET}"
+
+########################################################################################################################v
 # Create postgresssql backup
 export FOLDER=$(date '+%y/%m/%d')
 mkdir -p /nightly/$FOLDER/postgres
