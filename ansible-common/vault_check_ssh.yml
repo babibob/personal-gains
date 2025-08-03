@@ -1,0 +1,84 @@
+---
+- name: Check ssh port numbers are accessible from the current host
+  hosts: all
+  gather_facts: no
+  tasks:
+    - name: check network ssh
+      wait_for:
+        host: "{{ ip }}"
+        port: "{{ item }}"
+        state: started
+        delay: 0
+        timeout: 3
+      ignore_errors: true
+      register: ssh_result
+      with_items:
+        - 22
+      delegate_to: localhost
+    - group_by: key=reachable
+      when: ssh_result.failed is undefined
+      delegate_to: localhost
+    - name: add network_unreachable file
+      lineinfile:
+        path: /tmp/network_unreachable
+        line: 'CAN NOT CONNECT VIA NETWORK:'
+        create: true
+      delegate_to: localhost
+    - name: add network_unreachable file
+      lineinfile:
+        path: /tmp/network_unreachable
+        line: "{{ inventory_hostname  }}"      
+        create: true
+      when: ssh_result.failed is defined
+      ignore_errors: true
+      delegate_to: localhost
+    - name: add network_unreachable Hostname to file
+      lineinfile:
+        path: /tmp/network_unreachable
+        line: "{{ inventory_hostname  }}"      
+        create: true
+      when: ssh_result.failed is defined
+      ignore_errors: true
+      delegate_to: localhost
+
+- name: Gather VAULT-SSH reachable hosts
+  hosts: reachable
+  ignore_errors: true
+  gather_facts: true
+  tasks:
+    - block:
+        - set_fact:
+            vault_reachable: "{{ ansible_play_hosts }}"
+            create: true
+          delegate_to: localhost
+        - set_fact:
+            vault_unreachable: "{{ ansible_play_hosts_all|difference(ansible_play_hosts) }}"
+            create: true
+          delegate_to: localhost
+        - name: add ssh_reachable file
+          lineinfile:
+            path: /tmp/vault_reachable
+            line: 'CAN VAULT-SSH CONNECT HOSTS:'
+            create: true
+          delegate_to: localhost
+        - name: add vault_reachable file
+          lineinfile:
+            path: /tmp/vault_reachable
+            line: "{{ item }}"      
+            create: true
+          with_items: "{{ vault_reachable }}"
+          delegate_to: localhost
+        - name: add vault_unreachable file
+          lineinfile:
+            path: /tmp/vault_unreachable
+            line: 'FAILED VAULT-SSH CONNECT HOSTS:'
+            create: true
+          delegate_to: localhost
+        - name: add vault_unreachable file
+          lineinfile:
+            path: /tmp/vault_unreachable
+            line: "{{ item }}"      
+            create: true
+          with_items: "{{ vault_unreachable }}"
+          delegate_to: localhost
+      run_once: true
