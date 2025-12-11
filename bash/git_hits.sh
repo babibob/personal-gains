@@ -12,7 +12,7 @@ for repo in $(curl -s --header "PRIVATE-TOKEN: <TOKEN>" https://URI/api/v4/group
   done
 
 # Resolve git rebase conflicts
-export BRANCH=master ; \
+export BRANCH=$(git symbolic-ref --short refs/remotes/origin/HEAD | awk -F'/' '{print $2}') ; \
 git checkout ${BRANCH} ; \
 git pull ; \
 git checkout @{-1} ; \
