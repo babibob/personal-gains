@@ -1,8 +1,3 @@
-# Dependencies for macOS:
-# git clone https://github.com/zsh-users/zsh-autosuggestions ${ZSH_CUSTOM:-~/.oh-my-zsh/custom}/plugins/zsh-autosuggestions
-# git clone https://github.com/zsh-users/zsh-syntax-highlighting.git ${ZSH_CUSTOM:-~/.oh-my-zsh/custom}/plugins/zsh-syntax-highlighting
-# sudo chown $(id -nu):staff $HISTFILE
-
 # Enable Powerlevel10k instant prompt. Should stay close to the top of $HOME/.zshrc.
 # Initialization code that may require console input (password prompts, [y/n]
 # confirmations, etc.) must go above this block; everything else may go below.
@@ -84,7 +79,7 @@ ZSH_THEME="powerlevel10k/powerlevel10k"
 # Example format: plugins=(rails git textmate ruby lighthouse)
 # Add wisely, as too many plugins slow down shell startup.
 # plugins=(git)
-plugins=(git zsh-autosuggestions zsh-syntax-highlighting web-search)
+plugins=(direnv terraform git zsh-autosuggestions zsh-syntax-highlighting web-search)
 
 source $ZSH/oh-my-zsh.sh
 source $HOME/.oh-my-zsh/plugins/common-aliases/common-aliases.plugin.zsh
@@ -126,11 +121,11 @@ export SAVEHIST=$HISTSIZE
 setopt EXTENDED_HISTORY
 
 # export KUBECONFIG=$HOME/.kube/config
-export PATH=$HOME/.bin:$PATH
+export PATH=$HOME/.bin:$PATH:$HOME/gitlab/market-making/devops/misc
 
 bindkey -e
-bindkey '[C' forward-word
-bindkey '[D' backward-word
+bindkey '\e\e[C' forward-word
+bindkey '\e\e[D' backward-word
 
 # To customize prompt, run `p10k configure` or edit $HOME/.p10k.zsh.
 [[ ! -f $HOME/.p10k.zsh ]] || source $HOME/.p10k.zsh
@@ -145,3 +140,14 @@ export PATH="$HOME/.tfenv/bin:$PATH"
 
 # Created by `pipx` on 2025-02-17 10:52:21
 #export PATH="$PATH:$HOME/.local/bin"
+
+# To customize prompt, run `p10k configure` or edit ~/.p10k.zsh.
+[[ ! -f ~/.p10k.zsh ]] || source ~/.p10k.zsh
+
+export OP_ACCOUNT=whitebit-team.1password.com
+alias tailscale="/Applications/Tailscale.app/Contents/MacOS/Tailscale"
+alias tailscale="/Applications/Tailscale.app/Contents/MacOS/Tailscale"
+
+complete -o nospace -C /Users/local_user/.config/tfenv/versions/1.13.1/terraform terraform
+
+# eval "$(direnv hook zsh)"
